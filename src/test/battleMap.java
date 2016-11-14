@@ -32,21 +32,21 @@ public class battleMap {
 	 * 设置你自己在地图上的信息，该函数由主循环周期性调用
 	 */
 	public void setYourInfo(AdvancedRobot you) {
-		yourself.locationX = you.getX();
-		yourself.locationY = you.getY();
-		yourself.heading = you.getHeading();
-		yourself.velocity = you.getVelocity();
+		yourself.setLocationX(you.getX());
+		yourself.setLocationY(you.getY());
+		yourself.setHeading(you.getHeading());
+		yourself.setVelocity(you.getVelocity());
 	}
 
 	/**
 	 * 设置敌人的信息，目前只支持一个敌人，应重写为支持多个敌人
 	 */
 	public void setEnemyInfo(ScannedRobotEvent e) {
-		enemy.name = e.getName();
-		enemy.bearing = e.getBearing();
-		enemy.distance = e.getDistance();
-		enemy.heading = e.getHeading();
-		enemy.velocity = e.getVelocity();
+		enemy.setName(e.getName());
+		enemy.setBearing(e.getBearing());
+		enemy.setDistance(e.getDistance());
+		enemy.setHeading(e.getHeading());
+		enemy.setVelocity(e.getVelocity());
 
 		// 此处应当根据你自的位置更新敌人的方位;
 		// enemy.locationX=0;
@@ -73,8 +73,9 @@ public class battleMap {
 	 */
 	public NextMoveInfo turnNextMove() {
 		NextMoveInfo nextMoveInfo = new NextMoveInfo();
-		nextMoveInfo.setBearing(0);
-		nextMoveInfo.setDistance(0);
+		//遍历计算合理确定运动
+		
+		
 		return nextMoveInfo;
 	}
 
