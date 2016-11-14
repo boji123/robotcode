@@ -7,6 +7,20 @@ package test;
  *
  */
 public class NextMoveInfo {
-	public double distance;// 移动的距离
-	public double bearing;// 转弯的朝向
+	private double distance;// 移动的距离
+	private double bearing;// 转弯的朝向
+	
+	public double getDistance() {
+		return distance;
+	}
+	public void setDistance(double distance) {
+		this.distance = distance;
+	}
+	public double getBearing() {
+		return bearing;
+	}
+	public void setBearing(double bearing) {
+		this.bearing = bearing;
+	}
+	
 }

@@ -1,5 +1,8 @@
 package test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import robocode.AdvancedRobot;
 import robocode.ScannedRobotEvent;
 
@@ -13,6 +16,7 @@ import robocode.ScannedRobotEvent;
 public class battleMap {
 	RobotInfo enemy = new RobotInfo();
 	RobotInfo yourself = new RobotInfo();
+	List<RobotInfo> enemyList=new ArrayList<>();
 
 	// robotinfo:
 	// String name;
@@ -69,8 +73,8 @@ public class battleMap {
 	 */
 	public NextMoveInfo turnNextMove() {
 		NextMoveInfo nextMoveInfo = new NextMoveInfo();
-		nextMoveInfo.bearing = 0;
-		nextMoveInfo.distance = 0;
+		nextMoveInfo.setBearing(0);
+		nextMoveInfo.setDistance(0);
 		return nextMoveInfo;
 	}
 
