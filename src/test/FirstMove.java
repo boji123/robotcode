@@ -31,20 +31,22 @@ public class FirstMove extends AdvancedRobot {
 	}
 
 	public void setMove() {
-		if (getDistanceRemaining() <= 20 && getTurnRemaining() <= 30) {// 如果上一次运动即将执行完，前进20像素与转动30度时间差不多
+		// 如果上一次运动即将执行完则开始计算下一步运动，计算完后上一次运动也执行完了(前进20像素与转动30度时间差不多)
+		if (getDistanceRemaining() <= 20 && getTurnRemaining() <= 30) {
 			// 没有事件触发时的普通控制方式
 			NextMoveInfo nextMoveInfo = map.calcuNextMove();
-			setTurnRight(nextMoveInfo.bearing);
-			setAhead(nextMoveInfo.distance);
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());
 		}
 	}
 
 	public void setFire() {
-		if (getGunTurnRemaining() <= 30) {// 如果上一次瞄准即将执行完
+		// 如果上一次瞄准即将执行完
+		if (getGunTurnRemaining() <= 30) {
 			// 没有事件触发时的普通控制方式
 			NextAimInfo nextAimInfo = map.calcuNextGunBearing();
-			setTurnGunRight(nextAimInfo.bearing);
-			if (nextAimInfo.ifCanFire) {
+			setTurnGunRight(nextAimInfo.getBearing());
+			if (nextAimInfo.getIfCanFire()) {
 				setFire(1);
 			}
 		}
@@ -69,6 +71,13 @@ public class FirstMove extends AdvancedRobot {
 	 * 撞击到敌人，可以获取到如bearing（敌人方位）等信息
 	 */
 	public void onHitRobot(HitRobotEvent event) {
+		// event.get___
+	}
+
+	/**
+	 * 你的子弹击中敌人
+	 */
+	public void onBulletHit(BulletHitEvent event) {
 		// event.get___
 	}
 
