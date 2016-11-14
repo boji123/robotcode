@@ -1,6 +1,7 @@
 package test;
 
 import robocode.AdvancedRobot;
+import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
 
 /**
@@ -10,8 +11,9 @@ import robocode.ScannedRobotEvent;
  *
  *         留坑待处理，只支持一个敌人，需要根据需要改进成支持多个敌人
  */
-public class battleMap {
+public class BattleMap {
 	RobotInfo enemy = new RobotInfo();
+
 	RobotInfo yourself = new RobotInfo();
 
 	// robotinfo:
@@ -52,25 +54,27 @@ public class battleMap {
 	/**
 	 * 若敌人死亡，从地图上移除
 	 */
-	public void removeEnemyFromMap(String enemyName) {
-
+	public void removeEnemyFromMap(RobotDeathEvent event) {
+		String robotName = event.getName();
 	}
 
 	/**
 	 * 根据地图的情况返回你的下一步炮管运动
 	 */
-	public double turnNextGunBearing() {
-		double nextBearing = 0;
-		return nextBearing;
+	public NextAimInfo calcuNextGunBearing() {
+		NextAimInfo nextAimInfo = new NextAimInfo();
+		nextAimInfo.bearing = 50;
+		nextAimInfo.ifCanFire = true;
+		return nextAimInfo;
 	}
 
 	/**
 	 * 根据地图的情况返回你的下一步车体运动
 	 */
-	public NextMoveInfo turnNextMove() {
+	public NextMoveInfo calcuNextMove() {
 		NextMoveInfo nextMoveInfo = new NextMoveInfo();
-		nextMoveInfo.bearing = 0;
-		nextMoveInfo.distance = 0;
+		nextMoveInfo.bearing = 50;
+		nextMoveInfo.distance = 50;
 		return nextMoveInfo;
 	}
 

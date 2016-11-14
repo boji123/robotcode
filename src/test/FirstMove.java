@@ -8,7 +8,7 @@ import robocode.*;
  *
  */
 public class FirstMove extends AdvancedRobot {
-	battleMap map = new battleMap();
+	BattleMap map = new BattleMap();
 
 	public void run() {
 		// 解除锁定，三个部分独立运行
@@ -27,23 +27,26 @@ public class FirstMove extends AdvancedRobot {
 		if (getRadarTurnRemaining() == 0) {
 			// 没有事件触发时的普通控制方式
 			setTurnRadarLeft(360);
-			// map.setYourPlace(this.get);
 		}
 	}
 
 	public void setMove() {
-		if (getDistanceRemaining() == 0) {
+		if (getDistanceRemaining() <= 20 && getTurnRemaining() <= 30) {// 如果上一次运动即将执行完，前进20像素与转动30度时间差不多
 			// 没有事件触发时的普通控制方式
-
+			NextMoveInfo nextMoveInfo = map.calcuNextMove();
+			setTurnRight(nextMoveInfo.bearing);
+			setAhead(nextMoveInfo.distance);
 		}
 	}
 
 	public void setFire() {
-		if (getGunTurnRemaining() == 0) {// 这里偷懒了，当检测到炮管停下时发射一枚炮弹
+		if (getGunTurnRemaining() <= 30) {// 如果上一次瞄准即将执行完
 			// 没有事件触发时的普通控制方式
-			fire(1);
-			// 这里容易出现冲突
-			// setTurnGunRight(map.turnNextGunBearing());
+			NextAimInfo nextAimInfo = map.calcuNextGunBearing();
+			setTurnGunRight(nextAimInfo.bearing);
+			if (nextAimInfo.ifCanFire) {
+				setFire(1);
+			}
 		}
 	}
 
@@ -52,10 +55,14 @@ public class FirstMove extends AdvancedRobot {
 	 * 雷达扫描到一个敌人，可以获取到敌人的信息
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		if (getGunTurnRemaining() == 0) {
-			double enemyDirectionFromGun = (e.getBearing() - (getGunHeading() - getHeading())) % 360;
-			setTurnGunRight(enemyDirectionFromGun);
-		}
+		map.setEnemyInfo(e);
+	}
+
+	/**
+	 * 敌人死亡
+	 */
+	public void onRobotDeath(RobotDeathEvent event) {
+		map.removeEnemyFromMap(event);
 	}
 
 	/**
@@ -91,6 +98,7 @@ public class FirstMove extends AdvancedRobot {
 		return angle;
 	}
 
+	// ------------------------------------------------------------------------------------
 	/**
 	 * 如果能胜利的话。。执行这一段装逼用
 	 */
