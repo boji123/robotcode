@@ -8,7 +8,7 @@ import robocode.*;
  *
  */
 public class FirstMove extends AdvancedRobot {
-	Map map = new Map();
+	battleMap map = new battleMap();
 
 	public void run() {
 		// 解除锁定，三个部分独立运行

@@ -10,7 +10,7 @@ import robocode.ScannedRobotEvent;
  *
  *         留坑待处理，只支持一个敌人，需要根据需要改进成支持多个敌人
  */
-public class Map {
+public class battleMap {
 	RobotInfo enemy = new RobotInfo();
 	RobotInfo yourself = new RobotInfo();
 
