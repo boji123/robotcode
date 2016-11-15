@@ -2,6 +2,10 @@ package test;
 
 import java.awt.geom.Point2D;
 
+import javax.net.ssl.SSLEngineResult.Status;
+
+import robocode.AdvancedRobot;
+
 /**
  * 在map类中使用，用于保存机器人的方位等信息
  * 
@@ -11,15 +15,17 @@ import java.awt.geom.Point2D;
 public class RobotInfo {
 	private String name;// 机器人名字
 	private double heading;// 机器人的朝向
-	private double velocity;// 机器人的速度
 	private double bearing;// 机器人相对于你的朝向（仅当机器人是敌人时）
 	private double distance;// 机器人离你的距离
 	private double locationX;// 机器人在地图上的绝对坐标
 	private double locationY;
+	private double changehead;//转炮台
 	private double speed;//获取速度
 	private boolean isAlive;//标记是否存活
 	private long ctime;//扫描时刻的时间
 	private int selfFlag;//自身标记1-自身 0-敌人
+	private double fifo;//优先级，仅敌方需要
+	//private double m=10;//质量
 	public String getName() {
 		return name;
 	}
@@ -31,12 +37,6 @@ public class RobotInfo {
 	}
 	public void setHeading(double heading) {
 		this.heading = heading;
-	}
-	public double getVelocity() {
-		return velocity;
-	}
-	public void setVelocity(double velocity) {
-		this.velocity = velocity;
 	}
 	public double getBearing() {
 		return bearing;
@@ -86,6 +86,26 @@ public class RobotInfo {
 	public void setSelfFlag(int selfFlag) {
 		this.selfFlag = selfFlag;
 	}
+	public double getFifo() {
+		return fifo;
+	}
+	public void setFifo(double fifo) {
+		this.fifo = fifo;
+	}
+	/*
+	public double getM() {
+		return m;
+	}
+	public void setM(double m) {
+		this.m = m;
+	}
+	*/
+	public double getChangehead() {
+		return changehead;
+	}
+	public void setChangehead(double changehead) {
+		this.changehead = changehead;
+	}
 	public Point2D.Double guessEnemyPosition(long nowTime) {
 		double diff,newX,newY;
 		if(this.getSelfFlag()!=1){
@@ -97,5 +117,19 @@ public class RobotInfo {
 			return null;
 		}
 	}
-	
+	public static double executeFunc(double d,double theta,double v){
+		double result=d+2*theta+100*v;
+		return result;
+	}
+	public void setFifo(AdvancedRobot me){
+		double y=Math.abs(me.getY()-this.getLocationY());
+		double x=Math.abs(me.getX()-this.getLocationX());
+		double theta=FirstMove.normalizeBearing(me.getGunHeading()-Math.atan2(y, x));
+		double ang=360-this.getHeading()-(90-Math.atan2(y, x));
+		ang=Math.abs(ang);
+		if(ang>180)
+			ang-=180;
+		double v=Math.abs(Math.cos(ang));
+		this.executeFunc(this.getDistance(), Math.abs(theta), v);
+	}
 }

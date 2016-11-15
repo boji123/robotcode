@@ -8,7 +8,7 @@ import robocode.*;
  *
  */
 public class FirstMove extends AdvancedRobot {
-	battleMap map = new battleMap();
+	BattleMap map = new BattleMap();
 
 	public void run() {
 		// 解除锁定，三个部分独立运行
@@ -27,23 +27,28 @@ public class FirstMove extends AdvancedRobot {
 		if (getRadarTurnRemaining() == 0) {
 			// 没有事件触发时的普通控制方式
 			setTurnRadarLeft(360);
-			// map.setYourPlace(this.get);
 		}
 	}
 
 	public void setMove() {
-		if (getDistanceRemaining() == 0) {
+		// 如果上一次运动即将执行完则开始计算下一步运动，计算完后上一次运动也执行完了(前进20像素与转动30度时间差不多)
+		if (getDistanceRemaining() <= 20 && getTurnRemaining() <= 30) {
 			// 没有事件触发时的普通控制方式
-
+			NextMoveInfo nextMoveInfo = map.calcuNextMove(this);
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());
 		}
 	}
 
 	public void setFire() {
-		if (getGunTurnRemaining() == 0) {// 这里偷懒了，当检测到炮管停下时发射一枚炮弹
+		// 如果上一次瞄准即将执行完
+		if (getGunTurnRemaining() <= 30) {
 			// 没有事件触发时的普通控制方式
-			fire(1);
-			// 这里容易出现冲突
-			// setTurnGunRight(map.turnNextGunBearing());
+			NextAimInfo nextAimInfo = map.calcuNextGunBearing();
+			setTurnGunRight(nextAimInfo.getBearing());
+			if (nextAimInfo.getIfCanFire()) {
+				setFire(1);
+			}
 		}
 	}
 
@@ -52,16 +57,27 @@ public class FirstMove extends AdvancedRobot {
 	 * 雷达扫描到一个敌人，可以获取到敌人的信息
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		if (getGunTurnRemaining() == 0) {
-			double enemyDirectionFromGun = (e.getBearing() - (getGunHeading() - getHeading())) % 360;
-			setTurnGunRight(enemyDirectionFromGun);
-		}
+		map.setEnemyInfo(e,this);
+	}
+
+	/**
+	 * 敌人死亡
+	 */
+	public void onRobotDeath(RobotDeathEvent event) {
+		map.removeEnemyFromMap(event);
 	}
 
 	/**
 	 * 撞击到敌人，可以获取到如bearing（敌人方位）等信息
 	 */
 	public void onHitRobot(HitRobotEvent event) {
+		// event.get___
+	}
+
+	/**
+	 * 你的子弹击中敌人
+	 */
+	public void onBulletHit(BulletHitEvent event) {
 		// event.get___
 	}
 
@@ -83,7 +99,7 @@ public class FirstMove extends AdvancedRobot {
 	/**
 	 * 输入-2pi~2pi区间的角度值，返回-pi到pi的规范化角度（方便系统使用）
 	 */
-	private static double normalizeBearing(double angle) {
+	public static double normalizeBearing(double angle) {
 		if (angle < -Math.PI)
 			angle += 2 * Math.PI;
 		if (angle > Math.PI)
@@ -91,6 +107,7 @@ public class FirstMove extends AdvancedRobot {
 		return angle;
 	}
 
+	// ------------------------------------------------------------------------------------
 	/**
 	 * 如果能胜利的话。。执行这一段装逼用
 	 */
