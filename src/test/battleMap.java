@@ -1,69 +1,61 @@
 package test;
 
-import java.awt.Robot;
-import java.awt.image.SinglePixelPackedSampleModel;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 import robocode.AdvancedRobot;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
 
 /**
- * 地图类，用于保存所有敌人以及你自己的位置信息
- * 
- * @author baiji
- *
- *         留坑待处理，只支持一个敌人，需要根据需要改进成支持多个敌人
+ * 地图类，用于保存所有敌人以及你自己的位置信息 留坑待处理，只支持一个敌人，需要根据需要改进成支持多个敌人
  */
 public class BattleMap {
-	RobotInfo enemy = new RobotInfo();
+	AdvancedRobot battleRule;
+
+	BattleMap(AdvancedRobot battleRule) {
+		this.battleRule = battleRule;
+	}
+
 	RobotInfo yourself = new RobotInfo();
-	List<RobotInfo> enemyList = new ArrayList<>();
+	Hashtable<String, RobotInfo> enemyList = new Hashtable<String, RobotInfo>();
+
 	// 在每次计算完下一tick的行动之后，将行动数据存于这两个变量并返回，其中计算nextAimInfo时需要传入nextMoveInfo进行综合
 	NextMoveInfo nextMoveInfo = new NextMoveInfo();
 	NextAimInfo nextAimInfo = new NextAimInfo();
-	// robotinfo:
-	// String name;
-	// double locationX;
-	// double locationY;
-	// double bearing;
-	// double distance;
-	// double heading;
-	// double velocity;
-	// double energy;
 
 	/**
 	 * 设置你自己在地图上的信息，该函数由主循环周期性调用
 	 */
 	public void setYourInfo(AdvancedRobot you) {
-		yourself.locationX = you.getX();
-		yourself.locationY = you.getY();
-		yourself.heading = you.getHeading();
-		yourself.velocity = you.getVelocity();
-		yourself.gunHeading = you.getGunHeading();
+		yourself.setLocationX(you.getX());
+		yourself.setLocationY(you.getY());
+		yourself.setHeading(you.getHeading());
+		yourself.setVelocity(you.getVelocity());
+		yourself.setGunHeading(you.getGunHeading());
 	}
 
 	/**
 	 * 设置敌人的信息，目前只支持一个敌人，应重写为支持多个敌人
 	 */
 	public void setEnemyInfo(ScannedRobotEvent e) {
-		enemy.name = e.getName();
-		enemy.bearing = e.getBearing();// 相对于你车体的朝向
-		enemy.distance = e.getDistance();
-		enemy.heading = e.getHeading();
-		enemy.velocity = e.getVelocity();
+		RobotInfo enemy;
+		if (enemyList.containsKey(e.getName())) {
+			enemy = (RobotInfo) enemyList.get(e.getName());
+		} else {
+			enemy = new RobotInfo();
+			enemyList.put(e.getName(), enemy);
+		}
+		enemy.setName(e.getName());
+		enemy.setBearing(e.getBearing()); // 相对于你车体的朝向
+		enemy.setDistance(e.getDistance());
+		enemy.setHeading(e.getHeading());
+		enemy.setVelocity(e.getVelocity());
 
-		double absoluteAngle = normalizeBearing(enemy.bearing + yourself.heading);
-		// System.out.println(absoluteAngle);
-		// System.out.println(enemy.distance);
+		double absoluteRadius = normalizeBearing(enemy.getBearing() + yourself.getHeading()) / 180 * Math.PI;
 		// 此处应当根据你自的位置更新敌人的方位;
-		enemy.locationX = yourself.locationX + enemy.distance * Math.sin(absoluteAngle / 180 * Math.PI);
-		enemy.locationY = yourself.locationY + enemy.distance * Math.cos(absoluteAngle / 180 * Math.PI);
-		// System.out.println("yourlocation:" + yourself.locationX + "," +
-		// yourself.locationY);
-		// System.out.println("enemylocation:" + enemy.locationX + "," +
-		// enemy.locationY);
+		enemy.setLocationX(yourself.getLocationX() + enemy.getDistance() * Math.sin(absoluteRadius));
+		enemy.setLocationY(yourself.getLocationY() + enemy.getDistance() * Math.cos(absoluteRadius));
 	}
 
 	/**
@@ -71,6 +63,7 @@ public class BattleMap {
 	 */
 	public void removeEnemyFromMap(RobotDeathEvent event) {
 		String robotName = event.getName();
+		enemyList.remove(robotName);
 	}
 
 	/**
@@ -91,8 +84,8 @@ public class BattleMap {
 	 * 预测开火方向，目前是假设敌人不运动而你自己运动
 	 */
 	private double predictAim(RobotInfo target) {
-		double lenX = target.locationX - yourself.locationX;
-		double lenY = target.locationY - yourself.locationY;
+		double lenX = target.getLocationX() - yourself.getLocationX();
+		double lenY = target.getLocationY() - yourself.getLocationY();
 		double predictBearing = Math.atan(lenX / lenY) * 180 / Math.PI;
 		if (lenX < 0 && lenY < 0) {
 			predictBearing -= 180;
@@ -100,10 +93,10 @@ public class BattleMap {
 			predictBearing += 180;
 		}
 		// 计算并规范化瞄准方向，这里没有考虑车身本身的运动
-		double nextGunTurn = normalizeBearing(predictBearing - yourself.gunHeading);
+		double nextGunTurn = normalizeBearing(predictBearing - yourself.getGunHeading());
 		// 根据车身的运动对炮管瞄准进行补偿
 		double nextTurn = nextMoveInfo.getBearing();
-		double maxTurn = 10 - 0.75 * Math.abs(yourself.velocity);
+		double maxTurn = 10 - 0.75 * Math.abs(yourself.getVelocity());
 		if (nextTurn > maxTurn) {
 			nextTurn = maxTurn;
 		} else if (nextTurn < -maxTurn) {
@@ -122,7 +115,11 @@ public class BattleMap {
 	 */
 	private RobotInfo calcuBestTarget() {
 		RobotInfo target = new RobotInfo();
-		target = enemy;
+		Enumeration<RobotInfo> enumeration = enemyList.elements();
+		while (enumeration.hasMoreElements()) {
+			// 此处应重写为选择最优目标
+			target = (RobotInfo) enumeration.nextElement();
+		}
 		return target;
 	}
 
@@ -130,14 +127,46 @@ public class BattleMap {
 	 * 根据地图的情况返回你的下一步车体运动
 	 */
 	public NextMoveInfo calcuNextMove() {
-		nextMoveInfo.setBearing(5);// max 10 per tick
-		nextMoveInfo.setDistance(8);// max 8 per tick
-		return nextMoveInfo;
-	}
+		double xforce = 0;
+		double yforce = 0;
+		Force force;
+		RobotInfo enemy;
+		Enumeration<RobotInfo> enumeration = enemyList.elements();
+		// 计算敌人的合力
+		while (enumeration.hasMoreElements()) {
+			enemy = (RobotInfo) enumeration.nextElement();
+			GravityPoint point = new GravityPoint(enemy.getLocationX(), enemy.getLocationY(), -20000);
+			force = point.calcuPointForce(yourself.getLocationX(), yourself.getLocationY());
+			xforce += force.xForce;
+			yforce += force.yForce;
+		}
 
-	private double calcuForce() {
-		double force = 0;
-		return force;
+		// 计算墙的作用力
+		GravityPoint[] pointList = new GravityPoint[5];// = new GravityPoint(0,
+		pointList[0] = new GravityPoint(0, yourself.getLocationY(), -10000);
+		pointList[1] = new GravityPoint(battleRule.getBattleFieldWidth(), yourself.getLocationY(), -10000);
+		pointList[2] = new GravityPoint(yourself.getLocationX(), 0, -10000);
+		pointList[3] = new GravityPoint(yourself.getLocationX(), battleRule.getBattleFieldHeight(), -10000);
+		pointList[4] = new GravityPoint(battleRule.getBattleFieldWidth() / 2, battleRule.getBattleFieldHeight() / 2,
+				-10000);
+		for (int i = 0; i < 5; i++) {
+			force = pointList[i].calcuPointForce(yourself.getLocationX(), yourself.getLocationY());
+			xforce += force.xForce;
+			yforce += force.yForce;
+
+		}
+		double forceDirection = getDirection(xforce, yforce);
+		// System.out.println(forceDirection);
+		// 计算出了X和Y的合力方向，但是没有有效地使用
+
+		double angle = normalizeBearing(forceDirection - yourself.getHeading());
+		nextMoveInfo.setBearing(angle);// max 10 per tick
+		// max 8 per tick
+		if (angle < 40)
+			nextMoveInfo.setDistance(8);
+		else
+			nextMoveInfo.setDistance(6);
+		return nextMoveInfo;
 	}
 
 	/**
@@ -149,5 +178,26 @@ public class BattleMap {
 		if (angle > 180)
 			angle -= 360;
 		return angle;
+	}
+
+	/**
+	 * 输入x距离和y距离，返回方向角
+	 */
+	private static double getDirection(double lenX, double lenY) {
+		double angler;
+		if (lenX == 0) {
+			if (lenY > 0)
+				angler = 0;
+			else
+				angler = -180;
+		} else {
+			angler = Math.atan(lenX / lenY) * 180 / Math.PI;
+			if (lenX < 0 && lenY < 0) {
+				angler -= 180;
+			} else if (lenX > 0 && lenY < 0) {
+				angler += 180;
+			}
+		}
+		return angler;
 	}
 }

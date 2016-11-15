@@ -1,17 +1,15 @@
 package test;
 
+import java.awt.Color;
+
 import robocode.*;
 
-/**
- * 
- * @author baiji
- *
- */
-public class FirstMove extends AdvancedRobot {
-	BattleMap battleMap = new BattleMap();
+public class AvoidMove extends AdvancedRobot {
+	BattleMap battleMap = new BattleMap(this);
 	long preTick = -1;
 
 	public void run() {
+		setColors(Color.green, Color.green, Color.green);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
@@ -86,14 +84,6 @@ public class FirstMove extends AdvancedRobot {
 	 */
 	public void onHitByBullet(HitByBulletEvent event) {
 		// event.get___
-	}
-
-	// 一些数学函数
-	/**
-	 * 输入起止坐标，返回角度的反正切值，可以不使用该函数直接调用atan2
-	 */
-	private static double getAngle(double x1, double y1, double x2, double y2) {
-		return Math.atan2(x2 - x1, y2 - y1);
 	}
 
 	// ------------------------------------------------------------------------------------
