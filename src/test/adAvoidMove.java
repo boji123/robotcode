@@ -4,12 +4,13 @@ import java.awt.Color;
 
 import robocode.*;
 
-public class AvoidMove extends AdvancedRobot {
+public class adAvoidMove extends AdvancedRobot {
 	BattleMap battleMap = new BattleMap(this);
 	long preTick = -1;
 
 	public void run() {
-		setColors(Color.green, Color.green, Color.green);
+		setMaxVelocity(8);
+		setColors(Color.red, Color.red, Color.red);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
@@ -77,6 +78,10 @@ public class AvoidMove extends AdvancedRobot {
 	 */
 	public void onBulletHit(BulletHitEvent event) {
 		// event.get___
+	}
+
+	public void onHitWall(HitWallEvent event) {
+		System.out.println("hitwall!");
 	}
 
 	/**

@@ -2,7 +2,6 @@ package test;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
-
 import robocode.AdvancedRobot;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
@@ -142,7 +141,7 @@ public class BattleMap {
 		}
 
 		// 计算墙的作用力
-		GravityPoint[] pointList = new GravityPoint[5];// = new GravityPoint(0,
+		GravityPoint[] pointList = new GravityPoint[5];
 		pointList[0] = new GravityPoint(0, yourself.getLocationY(), -10000);
 		pointList[1] = new GravityPoint(battleRule.getBattleFieldWidth(), yourself.getLocationY(), -10000);
 		pointList[2] = new GravityPoint(yourself.getLocationX(), 0, -10000);
@@ -160,12 +159,25 @@ public class BattleMap {
 		// 计算出了X和Y的合力方向，但是没有有效地使用
 
 		double angle = normalizeBearing(forceDirection - yourself.getHeading());
-		nextMoveInfo.setBearing(angle);// max 10 per tick
-		// max 8 per tick
-		if (angle < 40)
-			nextMoveInfo.setDistance(8);
-		else
-			nextMoveInfo.setDistance(6);
+		double power = Math.sqrt(xforce * xforce + yforce * yforce);
+		if (power > 4 && Math.abs(angle) > 90) {
+			nextMoveInfo.setDistance(4);// max 8 per tick
+			nextMoveInfo.setBearing(angle);// max 10 per tick
+		} else if (power > 2 && Math.abs(angle) > 70) {
+			nextMoveInfo.setDistance(8);// max 8 per tick
+			nextMoveInfo.setBearing(angle);// max 10 per tick
+		} else if (power > 1 && Math.abs(angle) > 50) {
+			nextMoveInfo.setDistance(12);// max 8 per tick
+			nextMoveInfo.setBearing(angle);// max 10 per tick
+		} else if (power > 0.5 && Math.abs(angle) > 30) {
+			nextMoveInfo.setDistance(16);// max 8 per tick
+			nextMoveInfo.setBearing(angle);// max 10 per tick
+		} else {
+			nextMoveInfo.setDistance(20);// max 8 per tick
+			nextMoveInfo.setBearing(angle);// max 10 per tick
+		}
+
+		System.out.println(power);
 		return nextMoveInfo;
 	}
 
