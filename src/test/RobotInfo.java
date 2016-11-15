@@ -14,5 +14,5 @@ public class RobotInfo {
 	double distance = 0;// 机器人离你的距离
 	double locationX = 0;// 机器人在地图上的绝对坐标
 	double locationY = 0;
-
+	double gunHeading = 0;// 机器人炮管朝向（仅当机器人是你自己时）
 }

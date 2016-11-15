@@ -8,47 +8,47 @@ import robocode.*;
  *
  */
 public class FirstMove extends AdvancedRobot {
-	BattleMap map = new BattleMap();
+	BattleMap battleMap = new BattleMap();
+	long preTick = -1;
 
 	public void run() {
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
 		while (true) {
-			map.setYourInfo(this);
+			while (getTime() == preTick)
+				;// 程序锁死直到下一tick到来
+			preTick = getTime();
+			updateInfo();
 			setScan();
 			setMove();
 			setFire();
+			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			execute();
 		}
 	}
 
+	public void updateInfo() {
+		battleMap.setYourInfo(this);
+	}
+
 	public void setScan() {
-		if (getRadarTurnRemaining() == 0) {
-			// 没有事件触发时的普通控制方式
+		if (getRadarTurnRemaining() <= 30) {
 			setTurnRadarLeft(360);
 		}
 	}
 
 	public void setMove() {
-		// 如果上一次运动即将执行完则开始计算下一步运动，计算完后上一次运动也执行完了(前进20像素与转动30度时间差不多)
-		if (getDistanceRemaining() <= 20 && getTurnRemaining() <= 30) {
-			// 没有事件触发时的普通控制方式
-			NextMoveInfo nextMoveInfo = map.calcuNextMove();
-			setTurnRight(nextMoveInfo.getBearing());
-			setAhead(nextMoveInfo.getDistance());
-		}
+		NextMoveInfo nextMoveInfo = battleMap.calcuNextMove();
+		setTurnRight(nextMoveInfo.getBearing());
+		setAhead(nextMoveInfo.getDistance());
 	}
 
 	public void setFire() {
-		// 如果上一次瞄准即将执行完
-		if (getGunTurnRemaining() <= 30) {
-			// 没有事件触发时的普通控制方式
-			NextAimInfo nextAimInfo = map.calcuNextGunBearing();
-			setTurnGunRight(nextAimInfo.getBearing());
-			if (nextAimInfo.getIfCanFire()) {
-				setFire(1);
-			}
+		NextAimInfo nextAimInfo = battleMap.calcuNextGunBearing();
+		setTurnGunRight(nextAimInfo.getBearing());
+		if (nextAimInfo.getIfCanFire()) {
+			setFire(1);
 		}
 	}
 
@@ -57,14 +57,14 @@ public class FirstMove extends AdvancedRobot {
 	 * 雷达扫描到一个敌人，可以获取到敌人的信息
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		map.setEnemyInfo(e);
+		battleMap.setEnemyInfo(e);
 	}
 
 	/**
 	 * 敌人死亡
 	 */
 	public void onRobotDeath(RobotDeathEvent event) {
-		map.removeEnemyFromMap(event);
+		battleMap.removeEnemyFromMap(event);
 	}
 
 	/**
@@ -94,17 +94,6 @@ public class FirstMove extends AdvancedRobot {
 	 */
 	private static double getAngle(double x1, double y1, double x2, double y2) {
 		return Math.atan2(x2 - x1, y2 - y1);
-	}
-
-	/**
-	 * 输入-2pi~2pi区间的角度值，返回-pi到pi的规范化角度（方便系统使用）
-	 */
-	private static double normalizeBearing(double angle) {
-		if (angle < -Math.PI)
-			angle += 2 * Math.PI;
-		if (angle > Math.PI)
-			angle -= 2 * Math.PI;
-		return angle;
 	}
 
 	// ------------------------------------------------------------------------------------
