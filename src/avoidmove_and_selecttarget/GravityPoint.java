@@ -1,5 +1,8 @@
-package test;
+package avoidmove_and_selecttarget;
 
+/**
+ * 重力点的数据结构
+ */
 public class GravityPoint {
 	private double locationX = 0;
 	private double locationY = 0;

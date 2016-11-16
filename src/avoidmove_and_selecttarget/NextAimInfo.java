@@ -1,5 +1,8 @@
-package test;
+package avoidmove_and_selecttarget;
 
+/**
+ * 下一步瞄准信息的数据结构
+ */
 public class NextAimInfo {
 	private boolean ifCanFire;
 	private double bearing;

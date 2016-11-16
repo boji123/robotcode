@@ -1,7 +1,7 @@
-package test;
+package avoidmove_and_selecttarget;
 
 /**
- * 数据结构，下一步移动的量，包括方向与距离
+ * 下一步移动的量的数据结构，包括方向与距离
  */
 public class NextMoveInfo {
 	private double distance;// 移动的距离
