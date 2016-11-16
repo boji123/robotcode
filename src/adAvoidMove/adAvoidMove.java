@@ -1,15 +1,16 @@
-package avoidmove_and_selecttarget;
+package adAvoidMove;
 
 import java.awt.Color;
 
 import robocode.*;
 
-public class AvoidAndSelect extends AdvancedRobot {
+public class adAvoidMove extends AdvancedRobot {
 	BattleMap battleMap = new BattleMap(this);
 	long preTick = -1;
 
 	public void run() {
-		setColors(Color.blue, Color.blue, Color.blue);
+		setMaxVelocity(8);
+		setColors(Color.red, Color.red, Color.red);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
@@ -17,12 +18,17 @@ public class AvoidAndSelect extends AdvancedRobot {
 			while (getTime() == preTick)
 				;// 程序锁死直到下一tick到来
 			preTick = getTime();
+			updateInfo();
 			setScan();
 			setMove();
 			setFire();
 			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			execute();
 		}
+	}
+
+	public void updateInfo() {
+		battleMap.setYourInfo(this);
 	}
 
 	public void setScan() {
@@ -34,10 +40,7 @@ public class AvoidAndSelect extends AdvancedRobot {
 	public void setMove() {
 		NextMoveInfo nextMoveInfo = battleMap.calcuNextMove();
 		setTurnRight(nextMoveInfo.getBearing());
-		setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
-		// System.out.println(getVelocity());
-		// setTurnRight(0);
-		// setAhead(0);
+		setAhead(nextMoveInfo.getDistance());
 	}
 
 	public void setFire() {
