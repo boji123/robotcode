@@ -10,7 +10,7 @@ import robocode.ScannedRobotEvent;
  * 地图类，用于保存所有敌人以及你自己的位置信息 留坑待处理，只支持一个敌人，需要根据需要改进成支持多个敌人
  */
 public class BattleMap {
-	AdvancedRobot battle;// battleRule包含你自己的实时信息以及战场信息
+	AdvancedRobot battle;// battle包含你自己的实时信息以及战场信息
 
 	BattleMap(AdvancedRobot battle) {
 		this.battle = battle;
@@ -61,20 +61,20 @@ public class BattleMap {
 	public NextAimInfo calcuNextGunBearing() {
 		RobotInfo target = calcuBestTarget();
 		// System.out.println("target:" + target.getName());
-		double nextGunTurn = predictAim(target);// 炮管与预测开火方向的角度
-		// 这里有个问题，车体运动会影响炮管运动，影响很小，如需要提高精度需要解除运动对瞄准的影响，留坑
-		// nextGunTurn = adjustAim(nextGunTurn);
+
+		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
+		double nextGunTurn = predictAim(target);// 炮管与预测开火方向的角度，需要考虑车体的运动，这样下一帧才能对准敌人
 		nextAimInfo.setBearing(nextGunTurn);// 经过校准后下一帧可以准确对准敌人
 
-		// 当前敌人相对于你的绝对方向（与你车体朝向无关）
+		// --------------------------------确定当前帧是否开火-----------------------------------------
+		// 当前时刻敌人相对于你的绝对方向
 		double lenX = target.getLocationX() - battle.getX();
 		double lenY = target.getLocationY() - battle.getY();
 		double enemyBearding = getAngle(lenY, lenX);
-		// 炮管与敌人位置的误差（单位像素）
+		// 当前时刻炮管与敌人位置的误差（单位像素）
 		double angleErrorRange = Math.abs(normalizeAngle(enemyBearding - battle.getGunHeading()));
-		// 若当前炮管已经对准敌人（误差足够小）下一帧将射击（车体是36像素，一半就是18像素）
-		if (Math.sin(Math.toRadians(angleErrorRange)) * target.getDistance() < 10) {
-			System.out.println("diff:" + Math.sin(Math.toRadians(angleErrorRange)) * target.getDistance());
+		// 若当前炮管已经对准敌人（像素误差足够小）下一帧将射击（车体是36像素，一半就是18像素，若误差在18以内，必中固定靶）
+		if (Math.sin(Math.toRadians(angleErrorRange)) * target.getDistance() < 1) {
 			nextAimInfo.setIfCanFire(true);
 		} else {
 			nextAimInfo.setIfCanFire(false);
@@ -86,18 +86,16 @@ public class BattleMap {
 	 * 预测开火方向，目前是假设敌人不运动而你自己运动
 	 */
 	private double predictAim(RobotInfo target) {
-		double lenX = target.getLocationX() - battle.getX();
-		double lenY = target.getLocationY() - battle.getY();
-		double enemyBearding = getAngle(lenY, lenX);
-		// 计算并规范化瞄准方向，这里没有考虑车身本身的运动
-		double nextGunTurn = normalizeAngle(enemyBearding - battle.getGunHeading());
-		return nextGunTurn;
-	}
+		// 下一帧车体运动位移
+		double diffX = Math.sin(Math.toRadians(battle.getHeading())) * battle.getVelocity();
+		double diffY = Math.cos(Math.toRadians(battle.getHeading())) * battle.getVelocity();
+		// 计算坦克的角度，需要根据车身的运动对炮管瞄准进行补偿，减少由于车子的运动造成误差，确保如果下一帧能瞄准敌人
+		double lenX = target.getLocationX() - (battle.getX() + diffX);
+		double lenY = target.getLocationY() - (battle.getY() + diffY);
 
-	/**
-	 * 根据车身的运动对炮管瞄准进行补偿 确保如果下一帧能瞄准敌人时，不会由于车子的运动造成误差
-	 */
-	private double adjustAim(double nextGunTurn) {
+		double enemyBearding = getAngle(lenY, lenX);
+		// 计算并规范化瞄准方向，大于180度规范化后将逆时针转，确保对准时间最短
+		double nextGunTurn = normalizeAngle(enemyBearding - battle.getGunHeading());
 		return nextGunTurn;
 	}
 

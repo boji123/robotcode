@@ -12,6 +12,7 @@ public class RobotInfo {
 	private double locationX = 0;// 机器人在地图上的绝对坐标
 	private double locationY = 0;
 	private long scanTime = 0;// 扫描时刻的时间
+	private double aimPrice = 99999;// 射击该目标的代价在没计算前设置为极大
 
 	public String getName() {
 		return name;
@@ -75,5 +76,13 @@ public class RobotInfo {
 
 	public void setScanTime(long scanTime) {
 		this.scanTime = scanTime;
+	}
+
+	public double getAimPrice() {
+		return aimPrice;
+	}
+
+	public void setAimPrice(double aimPrice) {
+		this.aimPrice = aimPrice;
 	}
 }

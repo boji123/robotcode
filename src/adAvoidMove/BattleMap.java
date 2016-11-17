@@ -147,7 +147,7 @@ public class BattleMap {
 		pointList[2] = new GravityPoint(yourself.getLocationX(), 0, -10000);
 		pointList[3] = new GravityPoint(yourself.getLocationX(), battleRule.getBattleFieldHeight(), -10000);
 		pointList[4] = new GravityPoint(battleRule.getBattleFieldWidth() / 2, battleRule.getBattleFieldHeight() / 2,
-				-10000);
+				Math.random() * 20000 - 10000);
 		for (int i = 0; i < 5; i++) {
 			force = pointList[i].calcuPointForce(yourself.getLocationX(), yourself.getLocationY());
 			xforce += force.xForce;
