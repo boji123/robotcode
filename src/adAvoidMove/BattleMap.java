@@ -177,7 +177,7 @@ public class BattleMap {
 			nextMoveInfo.setBearing(angle);// max 10 per tick
 		}
 
-		System.out.println(power);
+		// System.out.println(power);
 		return nextMoveInfo;
 	}
 

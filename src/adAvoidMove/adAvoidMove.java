@@ -9,7 +9,6 @@ public class adAvoidMove extends AdvancedRobot {
 	long preTick = -1;
 
 	public void run() {
-		setMaxVelocity(8);
 		setColors(Color.red, Color.red, Color.red);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
