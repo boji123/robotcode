@@ -9,7 +9,7 @@ public class adPredict2 extends AdvancedRobot {
 	long preTick = -1;
 
 	public void run() {
-		setColors(Color.ORANGE, Color.ORANGE, Color.ORANGE);
+		setColors(Color.gray, Color.ORANGE, Color.ORANGE);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);

@@ -25,7 +25,7 @@ public class BattleMap {
 	// pattern match
 	private static final int MAX_PATTERN_LENGTH = 30;
 	private static Map<String, int[]> matcher = new HashMap<String, int[]>(40000);
-	private static String enemyHistory;
+	private static String enemyHistory = new String();
 	// predict
 	private static double FIRE_POWER = 3;
 	private static double FIRE_SPEED = Rules.getBulletSpeed(FIRE_POWER);
@@ -78,7 +78,7 @@ public class BattleMap {
 		}
 		record(enemy.thisStep);
 		enemyHistory = (char) enemy.thisStep + enemyHistory;
-		
+
 	}
 
 	/**
@@ -134,9 +134,7 @@ public class BattleMap {
 		}
 		return nextAimInfo;
 	}
-	
-	
-	
+
 	private void record(int thisStep) {
 		int maxLength = Math.min(MAX_PATTERN_LENGTH, enemyHistory.length());
 		for (int i = 0; i <= maxLength; ++i) {
@@ -164,8 +162,6 @@ public class BattleMap {
 		}
 		return nextTick;
 	}
-	
-	
 
 	/**
 	 * 预测开火方向
@@ -173,7 +169,7 @@ public class BattleMap {
 	private double predictAim(RobotInfo target) {
 		predictions.clear();
 		Point2D.Double myP = new Point2D.Double(battle.getX(), battle.getY());
-		Point2D.Double enemyP = project(myP, target.getHeading()+battle.getHeadingRadians(), target.getDistance());
+		Point2D.Double enemyP = project(myP, target.getHeading() + battle.getHeadingRadians(), target.getDistance());
 		String pattern = enemyHistory;
 		for (double d = 0; d < myP.distance(enemyP); d += FIRE_SPEED) {
 			int nextStep = predict(pattern);
@@ -212,7 +208,8 @@ public class BattleMap {
 
 		double enemyBearding = getAngle(lenY, lenX);
 		// 计算并规范化瞄准方向，大于180度规范化后将逆时针转，确保对准时间最短
-		//double nextGunTurn = normalizeAngle(enemyBearding - battle.getGunHeading());
+		// double nextGunTurn = normalizeAngle(enemyBearding -
+		// battle.getGunHeading());
 		double nextGunTurn = normalizeAngle(gunTurn);
 		return nextGunTurn;
 	}
@@ -343,7 +340,7 @@ public class BattleMap {
 			return angler - 180;
 		return angler;
 	}
-	
+
 	private static Point2D.Double project(Point2D.Double p, double angle, double distance) {
 		double x = p.x + distance * Math.sin(angle);
 		double y = p.y + distance * Math.cos(angle);
