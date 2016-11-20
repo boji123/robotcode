@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import robocode.AdvancedRobot;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
+import robocode.Rules;
 
 /**
  * 地图类，用于保存所有敌人以及你自己的位置信息
@@ -121,7 +122,9 @@ public class BattleMap {
 		target.predictDistance = Math.sqrt((target.predictX - battle.getX()) * (target.predictX - battle.getX())
 				+ (target.predictY - battle.getY()) * (target.predictY - battle.getY()));
 
-		double hitTime = Math.floor(target.predictDistance / 20) + battle.getTime() - target.getScanTime() + 1;// 粗略的估计
+		double bulletPower = (600 - target.predictDistance) / 300 + 1;
+		double hitTime = Math.floor(target.predictDistance / Rules.getBulletSpeed(bulletPower)) + battle.getTime()
+				- target.getScanTime();// 粗略的估计
 		target.predictX = target.predictX
 				+ Math.sin(target.getHeading() / 180 * Math.PI) * hitTime * target.averageVelocity;
 		target.predictY = target.predictY
