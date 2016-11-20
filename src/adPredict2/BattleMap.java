@@ -53,6 +53,11 @@ public class BattleMap {
 		double moveDist = Math.sqrt((newX - enemy.getLocationX()) * (newX - enemy.getLocationX())
 				+ (newY - enemy.getLocationY()) * (newY - enemy.getLocationY()));
 		enemy.averageVelocity = Math.signum(enemy.getVelocity()) * moveDist / (enemy.getScanTime() - enemy.preScanTime);
+		for (int i = 9; i > 0; i++) {
+			enemy.history[i] = enemy.history[i - 1];
+		}
+		enemy.history[0] = moveDist * 10 + enemy.averageVelocity;
+
 		enemy.setLocationX(newX);
 		enemy.setLocationY(newY);
 		// System.out.println(enemy.getLocationX());
@@ -207,7 +212,7 @@ public class BattleMap {
 		pointList[2] = new GravityPoint(battle.getX(), 0, -10000);
 		pointList[3] = new GravityPoint(battle.getX(), battle.getBattleFieldHeight(), -10000);
 		pointList[4] = new GravityPoint(battle.getBattleFieldWidth() / 2, battle.getBattleFieldHeight() / 2,
-				-Math.random() * 20000);// ÖÐµãËæ»ú0¡«20000
+				-Math.random() * 10000);
 		for (int i = 0; i < 5; i++) {
 			force = pointList[i].calcuPointForce(battle.getX(), battle.getY());
 			xforce += force.xForce;

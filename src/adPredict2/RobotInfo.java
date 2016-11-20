@@ -21,6 +21,8 @@ public class RobotInfo {
 	public double predictY = 0;
 	public double predictDistance = 0;
 	public double averageVelocity = 0;
+
+	public double[] history = new double[10];
 	// -------------------
 
 	public String getName() {

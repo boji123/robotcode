@@ -1,6 +1,7 @@
 package adPredict3;
 
 import java.awt.geom.Point2D;
+import java.awt.print.Printable;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.print.attribute.standard.Media;
+
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import robocode.AdvancedRobot;
 import robocode.RobotDeathEvent;
@@ -150,10 +153,16 @@ public class BattleMap {
 	}
 
 	private int predict(String pattern) {
+		if (pattern.length() == 0)
+			return 0;
 		int[] frequencies = null;
-		for (int patternLength = Math.min(pattern.length(), MAX_PATTERN_LENGTH); frequencies == null; --patternLength) {
-			frequencies = matcher.get(pattern.substring(0, patternLength));
+		for (int patternLength = Math.min(pattern.length(), MAX_PATTERN_LENGTH); frequencies == null
+				&& patternLength >= 0; --patternLength) {
+			String tmp = pattern.substring(0, patternLength);
+			frequencies = matcher.get(tmp);
 		}
+		if (frequencies == null)
+			return 0;
 		int nextTick = 0;
 		for (int i = 1; i < frequencies.length; ++i) {
 			if (frequencies[nextTick] < frequencies[i]) {
@@ -169,7 +178,7 @@ public class BattleMap {
 	private double predictAim(RobotInfo target) {
 		predictions.clear();
 		Point2D.Double myP = new Point2D.Double(battle.getX(), battle.getY());
-		Point2D.Double enemyP = project(myP, target.getHeading() + battle.getHeadingRadians(), target.getDistance());
+		Point2D.Double enemyP = new Point2D.Double(target.getLocationX(), target.getLocationY());
 		String pattern = enemyHistory;
 		for (double d = 0; d < myP.distance(enemyP); d += FIRE_SPEED) {
 			int nextStep = predict(pattern);
