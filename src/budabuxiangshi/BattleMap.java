@@ -1,4 +1,4 @@
-package adPredict2;
+package budabuxiangshi;
 
 import java.util.Enumeration;
 import java.util.Hashtable;

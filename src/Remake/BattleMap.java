@@ -1,7 +1,8 @@
-package adPredict2;
+package Remake;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+
 import robocode.AdvancedRobot;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
@@ -12,7 +13,6 @@ import robocode.Rules;
  */
 public class BattleMap {
 	AdvancedRobot battle;// battle包含你自己的实时信息以及战场信息
-	boolean ifAiming = false;
 	RobotInfo aimingTarget = new RobotInfo();
 
 	BattleMap(AdvancedRobot battle) {
@@ -30,33 +30,36 @@ public class BattleMap {
 	 */
 	public void setEnemyInfo(ScannedRobotEvent e) {
 		RobotInfo enemy;
+		boolean isNew = false;
 		if (enemyList.containsKey(e.getName())) {
 			enemy = (RobotInfo) enemyList.get(e.getName());
 		} else {
 			enemy = new RobotInfo();
 			enemyList.put(e.getName(), enemy);
+			enemy.setName(e.getName());
+			isNew = true;
 		}
 
-		enemy.setName(e.getName());
 		enemy.setBearing(e.getBearing()); // 相对于你车体的朝向
 		enemy.setDistance(e.getDistance());// 扫描扫的是最近距离，需要额外加上机器人的大小
+		double diffHeading = normalizeAngle(e.getHeading() - enemy.getHeading());// 上次记录到现在偏转的朝向差
 		enemy.setHeading(e.getHeading());
 		enemy.setVelocity(e.getVelocity());
-		enemy.preScanTime = enemy.getScanTime();
-		enemy.setScanTime(e.getTime());
+		double diffScanTime = e.getTime() - enemy.getLastScanTime();
+		enemy.setLastScanTime(e.getTime());
 		enemy.setEnergy(e.getEnergy());
 
 		double absoluteRadius = Math.toRadians(normalizeAngle(enemy.getBearing() + battle.getHeading()));
 		// 此处应当根据你的位置更新敌人的方位;
 		double newX = battle.getX() + enemy.getDistance() * Math.sin(absoluteRadius);
 		double newY = battle.getY() + enemy.getDistance() * Math.cos(absoluteRadius);
-		double moveDist = Math.sqrt((newX - enemy.getLocationX()) * (newX - enemy.getLocationX())
+		double diffDistance = Math.sqrt((newX - enemy.getLocationX()) * (newX - enemy.getLocationX())
 				+ (newY - enemy.getLocationY()) * (newY - enemy.getLocationY()));
-		enemy.averageVelocity = Math.signum(enemy.getVelocity()) * moveDist / (enemy.getScanTime() - enemy.preScanTime);
 		enemy.setLocationX(newX);
 		enemy.setLocationY(newY);
-		// System.out.println(enemy.getLocationX());
-		// System.out.println(enemy.averageVelocity);
+		if (!isNew) {
+			enemy.recordMatcher(diffDistance, diffHeading, diffScanTime);
+		}
 	}
 
 	/**
@@ -68,12 +71,12 @@ public class BattleMap {
 	}
 
 	/**
-	 * 若敌人剩下一个，开启雷达追踪模式
+	 * 雷达追踪模式
 	 */
 	public double trackCurrent(ScannedRobotEvent e) {
 		double RadarOffset;
 		double absoluteBearing = normalizeAngle(e.getBearing() + battle.getHeading());
-		System.out.println(absoluteBearing);
+		// System.out.println(absoluteBearing);
 		RadarOffset = normalizeAngle(absoluteBearing - battle.getRadarHeading());
 		return RadarOffset;
 	}
@@ -82,13 +85,11 @@ public class BattleMap {
 	 * 根据地图的情况返回你的下一步炮管运动
 	 */
 	public NextAimInfo calcuNextGunBearing() {
-		if (ifAiming == false || aimingTarget.getName() == null) {
-			ifAiming = true;
-			aimingTarget = calcuBestTarget();// 目标选择函数需要与预测函数配合使用，否则效果变差
-			// System.out.println("select:" + aimingTarget.getName());
-		}
+		if (aimingTarget.getName() == "")
+			return nextAimInfo;
 		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
-		double nextGunTurn = predictAim(aimingTarget);// 炮管与预测开火方向的角度，需要考虑车体的运动，这样下一帧才能对准敌人
+		double nextFirePower = (600 - aimingTarget.getDistance()) / 300 + 1;
+		double nextGunTurn = predictAim(aimingTarget, Rules.getBulletSpeed(nextFirePower));// 炮管与预测开火方向的角度，需要考虑车体的运动，这样下一帧才能对准敌人
 		nextAimInfo.setBearing(nextGunTurn);// 经过校准后下一帧可以准确对准敌人
 
 		// --------------------------------确定当前帧是否开火-----------------------------------------
@@ -100,13 +101,10 @@ public class BattleMap {
 		double angleErrorRange = Math.abs(normalizeAngle(enemyBearding - battle.getGunHeading()));
 		// 若当前炮管已经对准敌人（像素误差足够小）下一帧将射击（车体是36像素，一半就是18像素，若误差在18以内，必中固定靶）
 		if (Math.sin(Math.toRadians(angleErrorRange)) * aimingTarget.getDistance() < 10 && battle.getGunHeat() == 0) {
-			if (aimingTarget.predictDistance < 600 || aimingTarget.getEnergy() == 0) {
-				nextAimInfo.setPower((600 - aimingTarget.predictDistance) / 300 + 1);
+			if (aimingTarget.getDistance() < 600 || aimingTarget.getEnergy() == 0) {
+				nextAimInfo.setPower(nextFirePower);
 				nextAimInfo.setIfCanFire(true);
-				// System.out.println("power:" + ((400 -
-				// aimingTarget.predictDistance) / 200 + 1));
 			}
-			ifAiming = false;
 		} else {
 			nextAimInfo.setIfCanFire(false);
 		}
@@ -116,27 +114,9 @@ public class BattleMap {
 	/**
 	 * 预测开火方向
 	 */
-	private double predictAim(RobotInfo target) {
-		target.predictX = target.getLocationX();
-		target.predictY = target.getLocationY();
-		target.predictDistance = Math.sqrt((target.predictX - battle.getX()) * (target.predictX - battle.getX())
-				+ (target.predictY - battle.getY()) * (target.predictY - battle.getY()));
-
-		double bulletPower = (600 - target.predictDistance) / 300 + 1;
-		double hitTime = Math.floor(target.predictDistance / Rules.getBulletSpeed(bulletPower)) + battle.getTime()
-				- target.getScanTime();// 粗略的估计
-		target.predictX = target.predictX
-				+ Math.sin(target.getHeading() / 180 * Math.PI) * hitTime * target.averageVelocity;
-		target.predictY = target.predictY
-				+ Math.cos(target.getHeading() / 180 * Math.PI) * hitTime * target.averageVelocity;
-		if (target.predictX < 0)
-			target.predictX = 0;
-		else if (target.predictX > battle.getBattleFieldWidth())
-			target.predictX = battle.getBattleFieldWidth();
-		if (target.predictY < 0)
-			target.predictY = 0;
-		else if (target.predictY > battle.getBattleFieldHeight())
-			target.predictY = battle.getBattleFieldHeight();
+	private double predictAim(RobotInfo target, double bulletSpeed) {
+		target.predictLocation(battle, bulletSpeed);// 执行该步后target内更新predictX和predictY
+		System.out.println("X:" + target.predictX + " Y:" + target.predictY);
 		// 下一帧车体运动位移
 		double diffX = Math.sin(Math.toRadians(battle.getHeading())) * battle.getVelocity();
 		double diffY = Math.cos(Math.toRadians(battle.getHeading())) * battle.getVelocity();
@@ -153,7 +133,7 @@ public class BattleMap {
 	/**
 	 * calcuNextGunBearing专用，返回一个最适合打击的目标
 	 */
-	private RobotInfo calcuBestTarget() {
+	public void calcuBestTarget() {
 		RobotInfo target;
 		Enumeration<RobotInfo> enumeration = enemyList.elements();
 		double lost = 99999;
@@ -175,11 +155,8 @@ public class BattleMap {
 				best = target;
 				lost = target.getAimPrice();
 			}
-			// System.out.println("b:" + beardingErrorRadius * 180 / Math.PI);
-			// System.out.println("g:" + gunError);
-			// System.out.println("price:" + target.getAimPrice());
 		}
-		return best;
+		aimingTarget = best;
 	}
 
 	/**

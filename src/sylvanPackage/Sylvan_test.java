@@ -14,7 +14,7 @@ public class Sylvan_test extends AdvancedRobot {
 	enemyState enemy = new enemyState();
 	// pattern match
 	private static final int MAX_PATTERN_LENGTH = 30;
-	private static Map<String, int[]> matcher = new HashMap<String, int[]>(40000);
+	private Map<String, int[]> matcher = new HashMap<String, int[]>(40000);// static
 	private static String enemyHistory;
 	// predict
 	private static double FIRE_POWER = 3;
