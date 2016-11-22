@@ -34,15 +34,17 @@ public class RobotInfo {
 	public void recordMatcher(double diffDistance, double diffHeading, double diffScanTime) {
 		// 由于两次扫描时间有时间差，想象这段时间敌人移动的是一个圆弧，拆解每一步运动进行补间
 		double stepCount = diffScanTime;
+		double stepTurn = diffHeading / stepCount;
 		double stepMove;
 		if (diffHeading != 0) {
 			double R = (diffDistance / 2) / Math.sin(Math.toRadians(Math.abs(diffHeading) / 2));
 			double circleLen = R * Math.abs(diffHeading) / 180 * Math.PI;
-			stepMove = circleLen / stepCount;
+			stepMove = circleLen / stepCount * Math.signum(velocity);
 		} else {
-			stepMove = diffDistance / stepCount;
+			stepMove = diffDistance / stepCount * Math.signum(velocity);
 		}
-		double stepTurn = diffHeading / stepCount;
+		System.out.println("velo" + velocity);
+		System.out.println("move" + stepMove);
 
 		int thisStep = encode(stepTurn, stepMove);
 		System.out.println("stepMove:" + stepMove);
@@ -60,7 +62,7 @@ public class RobotInfo {
 		Point2D.Double myP = new Point2D.Double(me.getX(), me.getY());
 		Point2D.Double enemyP = new Point2D.Double(locationX, locationY);
 		String pattern = history;
-		System.out.println("eX:" + locationX + " eY:" + locationY);
+		// System.out.println("eX:" + locationX + " eY:" + locationY);
 		double nextHeading = heading;
 		for (double d = 0; d < myP.distance(enemyP); d += bulletSpeed) {
 			int nextStep = predict(pattern);
@@ -69,9 +71,18 @@ public class RobotInfo {
 			predictions.add(enemyP);
 			pattern = (char) nextStep + pattern;
 		}
-		System.out.println(predictions);
+		// System.out.println(predictions);
 		predictX = enemyP.getX();
+		if (predictX < 0)
+			predictX = 0;
+		else if (predictX > me.getBattleFieldWidth())
+			predictX = me.getBattleFieldWidth();
+
 		predictY = enemyP.getY();
+		if (predictY < 0)
+			predictY = 0;
+		else if (predictY > me.getBattleFieldHeight())
+			predictY = me.getBattleFieldHeight();
 	}
 
 	public int predict(String pattern) {

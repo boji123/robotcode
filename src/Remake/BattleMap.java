@@ -88,7 +88,8 @@ public class BattleMap {
 		if (aimingTarget.getName() == "")
 			return nextAimInfo;
 		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
-		double nextFirePower = (600 - aimingTarget.getDistance()) / 300 + 1;
+		double nextFirePower = 1000 / aimingTarget.getDistance();
+		nextAimInfo.setPower(nextFirePower);
 		double nextGunTurn = predictAim(aimingTarget, Rules.getBulletSpeed(nextFirePower));// 炮管与预测开火方向的角度，需要考虑车体的运动，这样下一帧才能对准敌人
 		nextAimInfo.setBearing(nextGunTurn);// 经过校准后下一帧可以准确对准敌人
 
@@ -100,9 +101,8 @@ public class BattleMap {
 		// 当前时刻炮管与敌人位置的误差（单位像素）
 		double angleErrorRange = Math.abs(normalizeAngle(enemyBearding - battle.getGunHeading()));
 		// 若当前炮管已经对准敌人（像素误差足够小）下一帧将射击（车体是36像素，一半就是18像素，若误差在18以内，必中固定靶）
-		if (Math.sin(Math.toRadians(angleErrorRange)) * aimingTarget.getDistance() < 10 && battle.getGunHeat() == 0) {
-			if (aimingTarget.getDistance() < 600 || aimingTarget.getEnergy() == 0) {
-				nextAimInfo.setPower(nextFirePower);
+		if (Math.sin(Math.toRadians(angleErrorRange)) * aimingTarget.getDistance() < 20 && battle.getGunHeat() == 0) {
+			if (aimingTarget.getDistance() < 800 || aimingTarget.getEnergy() == 0) {
 				nextAimInfo.setIfCanFire(true);
 			}
 		} else {
@@ -116,7 +116,7 @@ public class BattleMap {
 	 */
 	private double predictAim(RobotInfo target, double bulletSpeed) {
 		target.predictLocation(battle, bulletSpeed);// 执行该步后target内更新predictX和predictY
-		System.out.println("X:" + target.predictX + " Y:" + target.predictY);
+		// System.out.println("X:" + target.predictX + " Y:" + target.predictY);
 		// 下一帧车体运动位移
 		double diffX = Math.sin(Math.toRadians(battle.getHeading())) * battle.getVelocity();
 		double diffY = Math.cos(Math.toRadians(battle.getHeading())) * battle.getVelocity();
