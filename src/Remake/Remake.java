@@ -1,6 +1,7 @@
 package Remake;
 
 import java.awt.Color;
+import java.util.Random;
 
 import robocode.*;
 
@@ -10,8 +11,15 @@ public class Remake extends AdvancedRobot {
 	// 坦克状态控制关键字
 	int aimingTime = 0;
 	String friend = "name";// 队友名字
+	static boolean[] robotPlace = new boolean[4];
+	int robotNum;
 
 	public void run() {
+		do {// 随机分配一个角落给机器人，未完成
+			robotNum = (int) Math.random() * 100 % 4;
+		} while (robotPlace[robotNum] == false);
+		robotPlace[robotNum] = true;
+
 		setColors(Color.gray, Color.ORANGE, Color.ORANGE);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
@@ -31,15 +39,26 @@ public class Remake extends AdvancedRobot {
 	}
 
 	public void setScan() {
-		if (getOthers() > 1) {
+		if (getOthers() > 1) {// 超过一个敌人（小队战不适用）
 			setTurnRadarRight(500);
 		}
 	}
 
 	public void setMove() {
-		NextMoveInfo nextMoveInfo = battleMap.calcuNextMove();
-		setTurnRight(nextMoveInfo.getBearing());
-		setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
+		if (getOthers() > 1) {// 超过一个敌人（小队战不适用）
+			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(new Force());
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
+
+		} else {
+			NextMoveInfo nextMoveInfo = null;
+			if (nextMoveInfo == null) {
+				nextMoveInfo = battleMap.calcuNextGravityMove(new Force());
+				// 此处重写为hidebullet
+			}
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());
+		}
 	}
 
 	public void setFire() {
@@ -62,10 +81,10 @@ public class Remake extends AdvancedRobot {
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
 		if (e.getName() != friend) {
-			if (getOthers() == 1) {
-				setTurnRadarRight(battleMap.trackCurrent(e));
+			if (getOthers() > 1) {// 超过一个敌人（小队战不适用）
 				battleMap.setEnemyInfo(e);
 			} else {
+				setTurnRadarRight(battleMap.trackCurrent(e));
 				battleMap.setEnemyInfo(e);
 			}
 		}

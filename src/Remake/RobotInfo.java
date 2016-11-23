@@ -18,8 +18,8 @@ public class RobotInfo {
 	private double velocity = 0;// 机器人的速度
 	private double bearing = 0;// 机器人相对于你的朝向
 	private double distance = 0;// 机器人离你的距离
-	private double locationX = 0;// 机器人在地图上的绝对坐标
-	private double locationY = 0;
+	private double X = 0;// 机器人在地图上的绝对坐标
+	private double Y = 0;
 	private double energy = 0;
 	private long lastScanTime = 0;// 扫描时刻的时间
 	private double aimPrice = 99999;// 射击该目标的代价在没计算前设置为极大
@@ -57,12 +57,12 @@ public class RobotInfo {
 		}
 	}
 
-	public void predictLocation(AdvancedRobot me, double bulletSpeed) {
+	public void predict(AdvancedRobot me, double bulletSpeed) {
 		predictions.clear();
 		Point2D.Double myP = new Point2D.Double(me.getX(), me.getY());
-		Point2D.Double enemyP = new Point2D.Double(locationX, locationY);
+		Point2D.Double enemyP = new Point2D.Double(X, Y);
 		String pattern = history;
-		// System.out.println("eX:" + locationX + " eY:" + locationY);
+		// System.out.println("eX:" + X + " eY:" + Y);
 		double nextHeading = heading;
 		for (double d = 0; d < myP.distance(enemyP); d += bulletSpeed) {
 			int nextStep = predict(pattern);
@@ -163,20 +163,20 @@ public class RobotInfo {
 		this.distance = distance;
 	}
 
-	public double getLocationX() {
-		return locationX;
+	public double getX() {
+		return X;
 	}
 
-	public void setLocationX(double locationX) {
-		this.locationX = locationX;
+	public void setX(double X) {
+		this.X = X;
 	}
 
-	public double getLocationY() {
-		return locationY;
+	public double getY() {
+		return Y;
 	}
 
-	public void setLocationY(double locationY) {
-		this.locationY = locationY;
+	public void setY(double Y) {
+		this.Y = Y;
 	}
 
 	public double getVelocity() {

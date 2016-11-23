@@ -39,13 +39,12 @@ public class BattleMap {
 			enemy.setName(e.getName());
 			isNew = true;
 		}
-
+		double diffHeading = normalizeAngle(e.getHeading() - enemy.getHeading());// 上次记录到现在偏转的朝向差
+		double diffScanTime = e.getTime() - enemy.getLastScanTime();
 		enemy.setBearing(e.getBearing()); // 相对于你车体的朝向
 		enemy.setDistance(e.getDistance());// 扫描扫的是最近距离，需要额外加上机器人的大小
-		double diffHeading = normalizeAngle(e.getHeading() - enemy.getHeading());// 上次记录到现在偏转的朝向差
 		enemy.setHeading(e.getHeading());
 		enemy.setVelocity(e.getVelocity());
-		double diffScanTime = e.getTime() - enemy.getLastScanTime();
 		enemy.setLastScanTime(e.getTime());
 		enemy.setEnergy(e.getEnergy());
 
@@ -53,10 +52,10 @@ public class BattleMap {
 		// 此处应当根据你的位置更新敌人的方位;
 		double newX = battle.getX() + enemy.getDistance() * Math.sin(absoluteRadius);
 		double newY = battle.getY() + enemy.getDistance() * Math.cos(absoluteRadius);
-		double diffDistance = Math.sqrt((newX - enemy.getLocationX()) * (newX - enemy.getLocationX())
-				+ (newY - enemy.getLocationY()) * (newY - enemy.getLocationY()));
-		enemy.setLocationX(newX);
-		enemy.setLocationY(newY);
+		double diffDistance = Math
+				.sqrt((newX - enemy.getX()) * (newX - enemy.getX()) + (newY - enemy.getY()) * (newY - enemy.getY()));
+		enemy.setX(newX);
+		enemy.setY(newY);
 		if (!isNew) {
 			enemy.recordMatcher(diffDistance, diffHeading, diffScanTime);
 		}
@@ -88,7 +87,9 @@ public class BattleMap {
 		if (aimingTarget.getName() == "")
 			return nextAimInfo;
 		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
-		double nextFirePower = 1000 / aimingTarget.getDistance();
+		double nextFirePower = Math.min(Math.min(1000 / aimingTarget.getDistance(), aimingTarget.getEnergy() / 3),
+				battle.getEnergy() / 5);// 综合考虑自己剩余能量、敌人距离、敌人剩余能量
+
 		nextAimInfo.setPower(nextFirePower);
 		double nextGunTurn = predictAim(aimingTarget, Rules.getBulletSpeed(nextFirePower));// 炮管与预测开火方向的角度，需要考虑车体的运动，这样下一帧才能对准敌人
 		nextAimInfo.setBearing(nextGunTurn);// 经过校准后下一帧可以准确对准敌人
@@ -115,7 +116,7 @@ public class BattleMap {
 	 * 预测开火方向
 	 */
 	private double predictAim(RobotInfo target, double bulletSpeed) {
-		target.predictLocation(battle, bulletSpeed);// 执行该步后target内更新predictX和predictY
+		target.predict(battle, bulletSpeed);// 执行该步后target内更新predictX和predictY
 		// System.out.println("X:" + target.predictX + " Y:" + target.predictY);
 		// 下一帧车体运动位移
 		double diffX = Math.sin(Math.toRadians(battle.getHeading())) * battle.getVelocity();
@@ -142,8 +143,8 @@ public class BattleMap {
 			target = (RobotInfo) enumeration.nextElement();
 			// 代价函数=炮口角度差/20+距离/20+5*abs(sin(敌人朝向-敌人方位))+abs(敌人速度)/加速度
 			// 当前时刻敌人相对于你的绝对方向
-			double lenX = target.getLocationX() - battle.getX();
-			double lenY = target.getLocationY() - battle.getY();
+			double lenX = target.getX() - battle.getX();
+			double lenY = target.getY() - battle.getY();
 			double enemyBearding = getAngle(lenY, lenX);
 			// 当前时刻敌人朝向-敌人方位
 			double beardingErrorRadius = Math.toRadians(target.getHeading() - enemyBearding);
@@ -162,7 +163,7 @@ public class BattleMap {
 	/**
 	 * 根据地图的情况返回你的下一步车体运动，在靠近敌人时运动缓慢，应当改进（运动缓慢是为了防止撞墙）
 	 */
-	public NextMoveInfo calcuNextMove() {
+	public NextMoveInfo calcuNextGravityMove(Force outsideForce) {
 		double xforce = 0;
 		double yforce = 0;
 		Force force;
@@ -171,7 +172,7 @@ public class BattleMap {
 		// 计算敌人的合力
 		while (enumeration.hasMoreElements()) {
 			enemy = (RobotInfo) enumeration.nextElement();
-			GravityPoint point = new GravityPoint(enemy.getLocationX(), enemy.getLocationY(), -20000);
+			GravityPoint point = new GravityPoint(enemy.getX(), enemy.getY(), -20000);
 			force = point.calcuPointForce(battle.getX(), battle.getY());
 			xforce += force.xForce;
 			yforce += force.yForce;
@@ -190,7 +191,8 @@ public class BattleMap {
 			xforce += force.xForce;
 			yforce += force.yForce;
 		}
-
+		xforce += outsideForce.xForce;
+		yforce += outsideForce.yForce;
 		double forceDirection = normalizeAngle(getAngle(yforce, xforce));
 		// System.out.println("y" + yforce);
 		// System.out.println("x" + xforce);
