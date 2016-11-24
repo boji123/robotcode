@@ -101,7 +101,7 @@ public class BattleMap {
 	 * 根据地图的情况返回你的下一步炮管运动
 	 */
 	public NextAimInfo calcuNextGunBearing() {
-		if (aimingTarget.getName() == "")
+		if (aimingTarget.getName() == "" || aimingTarget.history.length() == 0)
 			return null;
 		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
 		double nextFirePower = Math.min(Math.min(1000 / aimingTarget.getDistance(), aimingTarget.getEnergy() / 3),
@@ -170,7 +170,7 @@ public class BattleMap {
 			double beardingErrorRadius = Math.toRadians(target.getHeading() - enemyBearding);
 			double gunError = Math.abs(normalizeAngle(enemyBearding - battle.getGunHeading()));
 
-			target.setAimPrice((target.getDistance() + gunError) / 20 + 5 * Math.sin(beardingErrorRadius)
+			target.setAimPrice((target.getDistance() + gunError) / 20 + 20 * Math.abs(Math.sin(beardingErrorRadius))
 					+ Math.abs(target.getVelocity()));
 			if (target.getAimPrice() < lost) {
 				best = target;

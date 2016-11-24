@@ -11,7 +11,7 @@ public class Remake extends AdvancedRobot {
 	long preTick = -1;
 	// 坦克状态控制关键字
 	int aimingTime = 0;
-	int hiding = 0;// 特殊情况需要强制后退闪避
+	int bumpHiding = 0;// 特殊情况需要强制后退闪避
 	String[] teammates = { "TeamRemake.Remake* (1)", "TeamRemake.Remake* (2)", "TeamRemake.Remake* (3)" };
 
 	int thisTurnScanRobotCount = 0;
@@ -77,7 +77,7 @@ public class Remake extends AdvancedRobot {
 
 	public void setMove() {
 
-		if (hiding == 0) {
+		if (bumpHiding == 0) {
 			if (!cooperate.ifReachPlace()) {
 				NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce);
 				setTurnRight(nextMoveInfo.getBearing());
@@ -88,11 +88,10 @@ public class Remake extends AdvancedRobot {
 				setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
 			}
 		} else
-			hiding--;
+			bumpHiding--;
 	}
 
 	public void setFire() {
-
 		NextAimInfo nextAimInfo = battleMap.calcuNextGunBearing();
 		if (nextAimInfo != null) {
 			if (aimingTime < 20) {
@@ -106,6 +105,7 @@ public class Remake extends AdvancedRobot {
 				battleMap.calcuBestTarget();
 			}
 		} else {
+
 			battleMap.calcuBestTarget();
 			// System.out.println("aimming:" +battleMap.aimingTarget.getName());
 		}
@@ -133,22 +133,20 @@ public class Remake extends AdvancedRobot {
 		if (event.getName() == battleMap.aimingTarget.getName()) {
 			aimingTime = 0;
 		}
-		if (isTeammate(event.getName()))
-			cooperate.teammatesRest--;
 	}
 
 	/**
 	 * 撞击到敌人，可以获取到如bearing（敌人方位）等信息
 	 */
 	public void onHitRobot(HitRobotEvent event) {
-		hiding = 5;
+		bumpHiding = 5;
 		setAhead(-50);
 		setTurnRight(event.getBearing());
 		System.out.println("hitrobot!:" + event.getName());
 	}
 
 	public void onHitWall(HitWallEvent event) {
-		hiding = 5;
+		bumpHiding = 5;
 		setAhead(-50);
 		setTurnRight(event.getBearing());
 		System.out.println("hitwall!");

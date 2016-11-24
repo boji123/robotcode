@@ -4,7 +4,6 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 
 import robocode.AdvancedRobot;
 import robocode.Rules;
@@ -27,11 +26,17 @@ public class RobotInfo {
 	public double predictX = 0;
 	public double predictY = 0;
 	private int MAX_PATTERN_LENGTH = 30;
-	private String history = "";
-	private Map<String, int[]> matcher = new Hashtable<String, int[]>(40000);// static
+	public String history = "";
+	private Hashtable<String, int[]> matcher = new Hashtable<String, int[]>(40000);// static
 	private List<Point2D.Double> predictions = new ArrayList<Point2D.Double>();
 
+	private boolean lock = false;
+
 	public void recordMatcher(double diffDistance, double diffHeading, double diffScanTime) {
+		while (lock == true)
+			;
+		lock = true;
+
 		// 由于两次扫描时间有时间差，想象这段时间敌人移动的是一个圆弧，拆解每一步运动进行补间
 		double stepCount = diffScanTime;
 		// System.out.println("time:" + diffScanTime);
@@ -56,9 +61,15 @@ public class RobotInfo {
 			record(thisStep);
 			history = (char) thisStep + history;
 		}
+
+		lock = false;
 	}
 
 	public void predict(AdvancedRobot me, double bulletSpeed) {
+		while (lock == true)
+			;
+		lock = true;
+
 		predictions.clear();
 		Point2D.Double myP = new Point2D.Double(me.getX(), me.getY());
 		Point2D.Double enemyP = new Point2D.Double(X, Y);
@@ -66,7 +77,7 @@ public class RobotInfo {
 		// System.out.println("eX:" + X + " eY:" + Y);
 		double nextHeading = heading;
 		for (double d = 0; d < myP.distance(enemyP); d += bulletSpeed) {
-			int nextStep = predict(pattern);
+			int nextStep = predictOneStep(pattern);
 			nextHeading = nextHeading + nextStep / 17 - 10;
 			enemyP = project(enemyP, Math.toRadians(nextHeading), nextStep % 17 - 8);
 			predictions.add(enemyP);
@@ -84,9 +95,11 @@ public class RobotInfo {
 			predictY = 0;
 		else if (predictY > me.getBattleFieldHeight())
 			predictY = me.getBattleFieldHeight();
+
+		lock = false;
 	}
 
-	public int predict(String pattern) {
+	private int predictOneStep(String pattern) {
 		int[] frequencies = null;
 		for (int patternLength = Math.min(pattern.length(), MAX_PATTERN_LENGTH); frequencies == null; --patternLength) {
 			frequencies = matcher.get(pattern.substring(0, patternLength));
