@@ -21,6 +21,6 @@ public class Cooperate {
 	}
 
 	public boolean ifReachPlace() {
-		return false;
+		return true;
 	}
 }

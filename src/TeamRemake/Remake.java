@@ -12,6 +12,7 @@ public class Remake extends AdvancedRobot {
 	// 坦克状态控制关键字
 	int aimingTime = 0;
 	int bumpHiding = 0;// 特殊情况需要强制后退闪避
+	int hitHiding = 0;
 	String[] teammates = { "TeamRemake.Remake* (1)", "TeamRemake.Remake* (2)", "TeamRemake.Remake* (3)" };
 
 	int thisTurnScanRobotCount = 0;
@@ -38,7 +39,14 @@ public class Remake extends AdvancedRobot {
 				;// 程序锁死直到下一tick到来
 			preTick = getTime();
 			setScan();
-			setMove();
+			if (hitHiding == 0 && bumpHiding == 0) {
+				setMove();
+			} else {
+				if (hitHiding > 0)
+					hitHiding--;
+				if (bumpHiding > 0)
+					bumpHiding--;
+			}
 			setFire();
 			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			// System.out.println(getOthers());
@@ -76,19 +84,26 @@ public class Remake extends AdvancedRobot {
 	}
 
 	public void setMove() {
+		if (!cooperate.ifReachPlace()) {
+			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce);
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
+		} else {// 应重写为在角落的运动
+			double bearing = battleMap.aimingTarget.getBearing();
+			double turnTagency;
+			if (bearing >= 0)
+				turnTagency = bearing - 90;
+			else
+				turnTagency = bearing + 90;
+			double predictHeadingRadius = Math.toRadians(turnTagency + getHeading());
+			Force force = new Force();
+			force.xForce = Math.sin(predictHeadingRadius) * 2000 / battleMap.aimingTarget.getDistance() * Math.random();
+			force.yForce = Math.cos(predictHeadingRadius) * 2000 / battleMap.aimingTarget.getDistance() * Math.random();
 
-		if (bumpHiding == 0) {
-			if (!cooperate.ifReachPlace()) {
-				NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce);
-				setTurnRight(nextMoveInfo.getBearing());
-				setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
-			} else {// 应重写为在角落的运动
-				NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce);
-				setTurnRight(nextMoveInfo.getBearing());
-				setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
-			}
-		} else
-			bumpHiding--;
+			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(force);
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
+		}
 	}
 
 	public void setFire() {
@@ -139,15 +154,15 @@ public class Remake extends AdvancedRobot {
 	 * 撞击到敌人，可以获取到如bearing（敌人方位）等信息
 	 */
 	public void onHitRobot(HitRobotEvent event) {
-		bumpHiding = 5;
-		setAhead(-50);
+		bumpHiding = 10;
+		setAhead(-100);
 		setTurnRight(event.getBearing());
 		System.out.println("hitrobot!:" + event.getName());
 	}
 
 	public void onHitWall(HitWallEvent event) {
-		bumpHiding = 5;
-		setAhead(-50);
+		bumpHiding = 10;
+		setAhead(-100);
 		setTurnRight(event.getBearing());
 		System.out.println("hitwall!");
 	}
@@ -156,6 +171,17 @@ public class Remake extends AdvancedRobot {
 	 * 被子弹击中，可以获得如子弹射过来的方向
 	 */
 	public void onHitByBullet(HitByBulletEvent event) {
+		hitHiding = 15 + (int) (10 * Math.random());
+		System.out.println(hitHiding);
+		double bearing = event.getBearing();
+		double turnTagency;
+		if (bearing >= 0)
+			turnTagency = bearing - 90;
+		else
+			turnTagency = bearing + 90;
+
+		setTurnRight(turnTagency);
+		setAhead(-200);
 		// event.get___
 	}
 
