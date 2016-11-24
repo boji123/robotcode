@@ -2,7 +2,7 @@ package TeamRemake;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +28,7 @@ public class RobotInfo {
 	public double predictY = 0;
 	private int MAX_PATTERN_LENGTH = 30;
 	private String history = "";
-	private Map<String, int[]> matcher = new HashMap<String, int[]>(40000);// static
+	private Map<String, int[]> matcher = new Hashtable<String, int[]>(40000);// static
 	private List<Point2D.Double> predictions = new ArrayList<Point2D.Double>();
 
 	public void recordMatcher(double diffDistance, double diffHeading, double diffScanTime) {
@@ -115,7 +115,8 @@ public class RobotInfo {
 	}
 
 	public static int encode(double dh, double v) {// 量化瞄准
-		if (Math.abs(dh) > Rules.MAX_TURN_RATE) {
+		// 有小概率dh大于最大值（计算误差）导致报错,在此先归整
+		if (Math.rint(Math.abs(dh)) > Rules.MAX_TURN_RATE) {
 			return (char) -1;
 		}
 		// 取正

@@ -2,20 +2,18 @@ package TeamRemake;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
-
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
-import robocode.TeamRobot;
 import robocode.Rules;
 
 /**
  * 地图类，用于保存所有敌人以及你自己的位置信息
  */
 public class BattleMap {
-	TeamRobot battle;// battle包含你自己的实时信息以及战场信息
+	Remake battle;// battle包含你自己的实时信息以及战场信息
 	RobotInfo aimingTarget = new RobotInfo();
 
-	BattleMap(TeamRobot battle) {
+	BattleMap(Remake battle) {
 		this.battle = battle;
 	}
 
@@ -33,10 +31,16 @@ public class BattleMap {
 		}
 	}
 
+	boolean recordLock = false;
+
 	/**
 	 * 设置敌人的信息，注意！扫描敌人有时效性！当剩下一个敌人时，应该跟踪！
 	 */
 	public void setEnemyInfo(ScannedRobotEvent e) {
+		while (recordLock == true)
+			;
+		recordLock = true;
+
 		RobotInfo enemy;
 		boolean isNew = false;
 		if (enemyList.containsKey(e.getName())) {
@@ -67,9 +71,11 @@ public class BattleMap {
 		enemy.setX(newX);
 		enemy.setY(newY);
 		if (!isNew && !battle.isTeammate(enemy.getName())) {
-
+			System.out.println(enemy.getName());
 			enemy.recordMatcher(diffDistance, diffHeading, diffScanTime);
 		}
+
+		recordLock = false;
 	}
 
 	/**
@@ -81,7 +87,7 @@ public class BattleMap {
 	}
 
 	/**
-	 * 雷达追踪模式
+	 * 雷达追踪模式，目前没有用到
 	 */
 	public double trackCurrent(ScannedRobotEvent e) {
 		double RadarOffset;
@@ -96,7 +102,7 @@ public class BattleMap {
 	 */
 	public NextAimInfo calcuNextGunBearing() {
 		if (aimingTarget.getName() == "")
-			return nextAimInfo;
+			return null;
 		// ------------------------------确定下一帧炮管瞄准的方向---------------------------------------
 		double nextFirePower = Math.min(Math.min(1000 / aimingTarget.getDistance(), aimingTarget.getEnergy() / 3),
 				battle.getEnergy() / 5);// 综合考虑自己剩余能量、敌人距离、敌人剩余能量
@@ -120,6 +126,7 @@ public class BattleMap {
 		} else {
 			nextAimInfo.setIfCanFire(false);
 		}
+
 		return nextAimInfo;
 	}
 

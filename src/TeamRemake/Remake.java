@@ -1,16 +1,22 @@
 package TeamRemake;
 
 import java.awt.Color;
+import java.util.Hashtable;
 
 import robocode.*;
 
-public class Remake extends TeamRobot {
+public class Remake extends AdvancedRobot {
 	BattleMap battleMap = new BattleMap(this);
 	Cooperate cooperate = new Cooperate();
 	long preTick = -1;
 	// 坦克状态控制关键字
 	int aimingTime = 0;
 	int hiding = 0;// 特殊情况需要强制后退闪避
+	String[] teammates = { "TeamRemake.Remake* (1)", "TeamRemake.Remake* (2)", "TeamRemake.Remake* (3)" };
+
+	int thisTurnScanRobotCount = 0;
+	int noOnScanTime = 0;
+	Hashtable<String, Boolean> thisTurnScanList = new Hashtable<String, Boolean>();
 
 	public void run() {
 		cooperate.init(this, battleMap);
@@ -18,8 +24,15 @@ public class Remake extends TeamRobot {
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
-		setTurnRadarRight(500);
-
+		setTurnRadarRight(1000);
+		while (getTime() < 10) {// 开场扫描一圈
+			while (getTime() == preTick)
+				;// 程序锁死直到下一tick到来
+			setScan();
+			preTick = getTime();
+			execute();
+		}
+		cooperate.divideCornerForTeam();// 确保场上坦克已经扫描了一圈
 		while (true) {
 			while (getTime() == preTick)
 				;// 程序锁死直到下一tick到来
@@ -29,19 +42,37 @@ public class Remake extends TeamRobot {
 			setFire();
 			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			// System.out.println(getOthers());
-			if (getTime() == 10 && cooperate.isLeader) {// 确保场上坦克已经扫描了一圈
-				cooperate.divideCornerForTeam();
-				System.out.println("divideCorner");
-			}
 			execute();
 		}
 	}
 
-	public void setScan() {
+	public boolean isTeammate(String name) {
+		if (teammates == null)
+			return false;
+		for (int i = 0; i < teammates.length; i++)
+			if (name.compareTo(teammates[i]) == 0)
+				return true;
+		return false;
+	}
 
-		if (cooperate.getEnemyRest() > 1 || getTime() < 10) {// 超过一个敌人
-			setTurnRadarRight(500);
+	public String[] getTeammates() {
+		return teammates;
+	}
+
+	public void setScan() {
+		if (noOnScanTime > 3) {// 如果出现了足够大的空裆没有扫描到敌人，重置扫描状态，确保扫描角度是最优的
+			System.out.println("change");
+			noOnScanTime = 0;
+			thisTurnScanRobotCount = 0;
+			thisTurnScanList = new Hashtable<String, Boolean>();
+			setTurnRadarRight(1000 * Math.signum(getRadarTurnRemaining()));
 		}
+		if (thisTurnScanRobotCount >= getOthers()) {// 如果扫描到了所有敌人，切换扫描方向
+			setTurnRadarRight(-1000 * Math.signum(getRadarTurnRemaining()));
+			thisTurnScanRobotCount = 0;
+			thisTurnScanList = new Hashtable<String, Boolean>();
+		}
+		noOnScanTime++;
 	}
 
 	public void setMove() {
@@ -61,17 +92,22 @@ public class Remake extends TeamRobot {
 	}
 
 	public void setFire() {
-		if (aimingTime < 20) {
-			aimingTime++;
-			NextAimInfo nextAimInfo = battleMap.calcuNextGunBearing();
-			setTurnGunRight(nextAimInfo.getBearing());
-			if (nextAimInfo.getIfCanFire()) {
-				setFire(nextAimInfo.getPower());
+
+		NextAimInfo nextAimInfo = battleMap.calcuNextGunBearing();
+		if (nextAimInfo != null) {
+			if (aimingTime < 20) {
+				aimingTime++;
+				setTurnGunRight(nextAimInfo.getBearing());
+				if (nextAimInfo.getIfCanFire()) {
+					setFire(nextAimInfo.getPower());
+				}
+			} else {
+				aimingTime = 0;
+				battleMap.calcuBestTarget();
 			}
 		} else {
-			aimingTime = 0;
 			battleMap.calcuBestTarget();
-			// System.out.println(battleMap.aimingTarget.getName());
+			// System.out.println("aimming:" +battleMap.aimingTarget.getName());
 		}
 	}
 
@@ -80,21 +116,13 @@ public class Remake extends TeamRobot {
 	 * 雷达扫描到一个敌人，可以获取到敌人的信息
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		if (!isTeammate(e.getName())) {
-			if (cooperate.getEnemyRest() > 1) {
-				battleMap.setEnemyInfo(e);
-			} else {
-				setTurnRadarRight(battleMap.trackCurrent(e));
-				battleMap.setEnemyInfo(e);
-			}
-		} else {
-			battleMap.setEnemyInfo(e);// 方法名字不太对，但是凑合用吧。。。
+		noOnScanTime = 0;
+		if (!thisTurnScanList.containsKey(e.getName())) {
+			thisTurnScanRobotCount++;
+			thisTurnScanList.put(e.getName(), true);
 		}
 
-	}
-
-	public void onMessageReceived(MessageEvent event) {
-		cooperate.onMessageReceived(event);
+		battleMap.setEnemyInfo(e);
 	}
 
 	/**
