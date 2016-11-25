@@ -7,6 +7,8 @@ import java.util.Hashtable;
 import robocode.*;
 
 public class Remake extends AdvancedRobot {
+	int teamFireCount = 0;
+	// -----
 	BattleMap battleMap = new BattleMap(this);
 	Cooperate cooperate = new Cooperate();
 	long preTick = -1;
@@ -260,6 +262,8 @@ public class Remake extends AdvancedRobot {
 			// cooperate.divideCornerForTeam();
 			// cooperate.reachCount = 20;
 		}
+		if (cooperate.getEnemyRest() == 1)
+			cooperate.reachCount = 30;
 	}
 
 	/**
@@ -288,6 +292,10 @@ public class Remake extends AdvancedRobot {
 	 * 被子弹击中，可以获得如子弹射过来的方向
 	 */
 	public void onHitByBullet(HitByBulletEvent event) {
+		if (isTeammate(event.getName()))
+			teamFireCount++;
+		if (battleMap.getRobot(event.getName()).getDistance() < 100)
+			battleMap.aimingTarget = battleMap.getRobot(event.getName());
 		if (cooperate.getEnemyRest() <= 0 || hiding != 0)
 			return;
 
@@ -323,6 +331,10 @@ public class Remake extends AdvancedRobot {
 	}
 
 	// ------------------------------------------------------------------------------------
+	public void onDeath(DeathEvent event) {
+		System.out.println("teamFire:" + teamFireCount);
+	}
+
 	/**
 	 * 如果能胜利的话。。执行这一段装逼用
 	 */
