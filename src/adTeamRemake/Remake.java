@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
-
 import robocode.*;
 
 public class Remake extends AdvancedRobot {
@@ -288,8 +286,8 @@ public class Remake extends AdvancedRobot {
 			// cooperate.divideCornerForTeam();
 			// cooperate.reachCount = 20;
 		}
-		if (cooperate.getEnemyRest() == 1)
-			cooperate.reachCount = 30;
+		// if (cooperate.getEnemyRest() == 1)
+		// cooperate.reachCount = 30;
 	}
 
 	/**

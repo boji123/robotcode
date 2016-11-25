@@ -196,7 +196,11 @@ public class BattleMap {
 		// 计算敌人的合力
 		while (enumeration.hasMoreElements()) {
 			enemy = (RobotInfo) enumeration.nextElement();
-			GravityPoint point = new GravityPoint(enemy.getX(), enemy.getY(), -30000);
+			GravityPoint point;
+			if (!battle.isTeammate(enemy.getName()))
+				point = new GravityPoint(enemy.getX(), enemy.getY(), -30000);
+			else
+				point = new GravityPoint(enemy.getX(), enemy.getY(), -100000);
 			force = point.calcuPointForce(battle.getX(), battle.getY());
 			xforce += force.xForce;
 			yforce += force.yForce;
@@ -213,8 +217,6 @@ public class BattleMap {
 		pointList[6] = new GravityPoint(battle.getBattleFieldWidth(), 0, -20000);
 		pointList[7] = new GravityPoint(battle.getBattleFieldWidth(), battle.getBattleFieldHeight(), -20000);
 		pointList[8] = new GravityPoint(battle.getBattleFieldWidth() / 2, battle.getBattleFieldHeight() / 2, -10000);
-		// pointList[4] = new GravityPoint(battle.getBattleFieldWidth() / 2,
-		// battle.getBattleFieldHeight() / 2, -10000);
 		for (int i = 0; i < 9; i++) {
 			force = pointList[i].calcuPointForce(battle.getX(), battle.getY());
 			xforce += force.xForce;
