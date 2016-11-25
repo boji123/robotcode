@@ -85,16 +85,21 @@ public class RobotInfo {
 		}
 		// System.out.println(predictions);
 		predictX = enemyP.getX();
-		if (predictX < 0)
-			predictX = 0;
-		else if (predictX > me.getBattleFieldWidth())
-			predictX = me.getBattleFieldWidth();
+		// if (predictX < 0)
+		// predictX = 0;
+		// else if (predictX > me.getBattleFieldWidth())
+		// predictX = me.getBattleFieldWidth();
 
 		predictY = enemyP.getY();
-		if (predictY < 0)
-			predictY = 0;
-		else if (predictY > me.getBattleFieldHeight())
-			predictY = me.getBattleFieldHeight();
+		// if (predictY < 0)
+		// predictY = 0;
+		// else if (predictY > me.getBattleFieldHeight())
+		// predictY = me.getBattleFieldHeight();
+		if (predictX < 0 || predictX > me.getBattleFieldWidth() || predictY < 0
+				|| predictY > me.getBattleFieldHeight()) {
+			predictX = getX();
+			predictY = getY();
+		}
 
 		lock = false;
 	}

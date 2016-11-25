@@ -170,8 +170,10 @@ public class BattleMap {
 			double beardingErrorRadius = Math.toRadians(target.getHeading() - enemyBearding);
 			double gunError = Math.abs(normalizeAngle(enemyBearding - battle.getGunHeading()));
 
-			target.setAimPrice((target.getDistance() + gunError) / 20 + 20 * Math.abs(Math.sin(beardingErrorRadius))
-					+ Math.abs(target.getVelocity()));
+			// target.setAimPrice((target.getDistance() + gunError) / 20 + 5 *
+			// Math.abs(Math.sin(beardingErrorRadius))
+			// + Math.abs(target.getVelocity()));
+			target.setAimPrice(target.getEnergy() / 5 + target.getDistance() / 20);
 			if (target.getAimPrice() < lost) {
 				best = target;
 				lost = target.getAimPrice();
@@ -183,7 +185,7 @@ public class BattleMap {
 	/**
 	 * 根据地图的情况返回你的下一步车体运动，在靠近敌人时运动缓慢，应当改进（运动缓慢是为了防止撞墙）
 	 */
-	public NextMoveInfo calcuNextGravityMove(Force outsideForce) {
+	public NextMoveInfo calcuNextGravityMove(Force outsideForce, int direction) {
 		double xforce = 0;
 		double yforce = 0;
 		Force force;
@@ -211,7 +213,7 @@ public class BattleMap {
 		}
 		xforce += outsideForce.xForce;
 		yforce += outsideForce.yForce;
-		double forceDirection = normalizeAngle(getAngle(yforce, xforce));
+		double forceDirection = normalizeAngle(getAngle(yforce * direction, xforce * direction));
 		// System.out.println("y" + yforce);
 		// System.out.println("x" + xforce);
 		// 计算出了X和Y的合力方向，注意这里y正方向为0
@@ -221,19 +223,19 @@ public class BattleMap {
 		double angle = normalizeAngle(forceDirection - battle.getHeading());
 		double power = Math.sqrt(xforce * xforce + yforce * yforce);
 		if (power > 4 && Math.abs(angle) > 90) {
-			nextMoveInfo.setDistance(4);
+			nextMoveInfo.setDistance(4 * direction);
 			nextMoveInfo.setBearing(angle);
 		} else if (power > 2 && Math.abs(angle) > 70) {
-			nextMoveInfo.setDistance(8);
+			nextMoveInfo.setDistance(8 * direction);
 			nextMoveInfo.setBearing(angle);
 		} else if (power > 1 && Math.abs(angle) > 50) {
-			nextMoveInfo.setDistance(12);
+			nextMoveInfo.setDistance(12 * direction);
 			nextMoveInfo.setBearing(angle);
 		} else if (power > 0.5 && Math.abs(angle) > 30) {
-			nextMoveInfo.setDistance(16);
+			nextMoveInfo.setDistance(16 * direction);
 			nextMoveInfo.setBearing(angle);
 		} else {
-			nextMoveInfo.setDistance(20);
+			nextMoveInfo.setDistance(20 * direction);
 			nextMoveInfo.setBearing(angle);
 		}
 		return nextMoveInfo;

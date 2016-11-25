@@ -1,6 +1,7 @@
 package TeamRemake;
 
 import java.awt.Color;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 import robocode.*;
@@ -11,8 +12,9 @@ public class Remake extends AdvancedRobot {
 	long preTick = -1;
 	// 坦克状态控制关键字
 	int aimingTime = 0;
-	int bumpHiding = 0;// 特殊情况需要强制后退闪避
-	int hitHiding = 0;
+	int hiding = 0;// 特殊情况需要强制后退闪避
+	int changeDirection = 0;
+	int direction = 1;
 	String[] teammates = { "TeamRemake.Remake* (1)", "TeamRemake.Remake* (2)", "TeamRemake.Remake* (3)" };
 
 	int thisTurnScanRobotCount = 0;
@@ -33,25 +35,33 @@ public class Remake extends AdvancedRobot {
 			preTick = getTime();
 			execute();
 		}
-		cooperate.divideCornerForTeam();// 确保场上坦克已经扫描了一圈
-		while (true) {
+		// cooperate.divideCornerForTeam();// 确保场上坦克已经扫描了一圈
+		while (cooperate.getEnemyRest() > 0) {
 			while (getTime() == preTick)
 				;// 程序锁死直到下一tick到来
 			preTick = getTime();
 			setScan();
-			if (hitHiding == 0 && bumpHiding == 0) {
+			if (hiding == 0) {
 				setMove();
 			} else {
-				if (hitHiding > 0)
-					hitHiding--;
-				if (bumpHiding > 0)
-					bumpHiding--;
+				if (hiding > 0)
+					hiding--;
 			}
 			setFire();
 			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			// System.out.println(getOthers());
 			execute();
 		}
+		teammates = null;// 敌人死光，开启自相残杀
+		while (true) {
+			while (getTime() == preTick)
+				;// 程序锁死直到下一tick到来
+			preTick = getTime();
+			setScan();
+			setFire();
+			execute();
+		}
+
 	}
 
 	public boolean isTeammate(String name) {
@@ -84,26 +94,56 @@ public class Remake extends AdvancedRobot {
 	}
 
 	public void setMove() {
-		if (!cooperate.ifReachPlace()) {
-			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce);
-			setTurnRight(nextMoveInfo.getBearing());
-			setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
-		} else {// 应重写为在角落的运动
-			double bearing = battleMap.aimingTarget.getBearing();
-			double turnTagency;
-			if (bearing >= 0)
-				turnTagency = bearing - 90;
-			else
-				turnTagency = bearing + 90;
-			double predictHeadingRadius = Math.toRadians(turnTagency + getHeading());
-			Force force = new Force();
-			force.xForce = Math.sin(predictHeadingRadius) * 2000 / battleMap.aimingTarget.getDistance() * Math.random();
-			force.yForce = Math.cos(predictHeadingRadius) * 2000 / battleMap.aimingTarget.getDistance() * Math.random();
 
-			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(force);
+		if (changeDirection > 0)
+			changeDirection--;
+		else {
+			changeDirection = (int) (battleMap.aimingTarget.getDistance() / 30 + (Math.random() * 40));
+			if (getTime() % 4 > 0)
+				direction = -direction;
+		}
+
+		if (!cooperate.ifReachPlace()) {
+			// System.out.println("moveToCorner");
+			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(cooperate.cornerForce, 1);
+			setTurnRight(nextMoveInfo.getBearing());
+			setAhead(nextMoveInfo.getDistance());
+		} else {// 应重写为在角落的运动
+			Force force = new Force();
+			RobotInfo target;
+			Enumeration<RobotInfo> enumeration = battleMap.enemyList.elements();
+			while (enumeration.hasMoreElements()) {// 考虑切向力
+				target = (RobotInfo) enumeration.nextElement();
+				if (isTeammate(target.getName()))
+					continue;
+				// System.out.println("consider:" + target.getName());
+				double bearing = target.getBearing();
+
+				double turnTagency;
+				if (bearing >= 0)
+					turnTagency = bearing - 90;
+				else
+					turnTagency = bearing + 90;
+
+				double headingRadius = Math.toRadians(turnTagency + getHeading());
+
+				force.xForce += +Math.sin(headingRadius) * 1000 / target.getDistance() * direction * Math.random();
+				force.yForce += +Math.cos(headingRadius) * 1000 / target.getDistance() * direction * Math.random();
+			}
+			force.xForce /= cooperate.getEnemyRest();
+			force.yForce /= cooperate.getEnemyRest();
+			// System.out.println(force.xForce);
+			// System.out.println(force.yForce);
+			NextMoveInfo nextMoveInfo = battleMap.calcuNextGravityMove(force, direction);
 			setTurnRight(nextMoveInfo.getBearing());
 			setAhead(nextMoveInfo.getDistance());// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
 		}
+		/*
+		 * if (getX() < 100 || getBattleFieldWidth() - getX() < 100) { if
+		 * (Math.abs(getHeading()) < 90) setTurnRight(0 - getHeading()); else
+		 * setTurnRight(BattleMap.normalizeAngle(180 - getHeading())); }
+		 */
+
 	}
 
 	public void setFire() {
@@ -144,9 +184,16 @@ public class Remake extends AdvancedRobot {
 	 * 敌人死亡
 	 */
 	public void onRobotDeath(RobotDeathEvent event) {
+
 		battleMap.removeEnemyFromMap(event);
 		if (event.getName() == battleMap.aimingTarget.getName()) {
 			aimingTime = 0;
+		}
+		if (isTeammate(event.getName()))
+			cooperate.teammateRest--;
+		else {
+			// cooperate.divideCornerForTeam();
+			// cooperate.reachCount = 20;
 		}
 	}
 
@@ -154,15 +201,15 @@ public class Remake extends AdvancedRobot {
 	 * 撞击到敌人，可以获取到如bearing（敌人方位）等信息
 	 */
 	public void onHitRobot(HitRobotEvent event) {
-		bumpHiding = 10;
-		setAhead(-100);
-		setTurnRight(event.getBearing());
+		hiding = 10;
+		setAhead(-100 * direction);
+		setTurnRight(event.getBearing() - 90 + 90 * direction);
 		System.out.println("hitrobot!:" + event.getName());
 	}
 
 	public void onHitWall(HitWallEvent event) {
-		bumpHiding = 10;
-		setAhead(-100);
+		hiding = 10;
+		setAhead(-100 * direction - 90 + 90 * direction);
 		setTurnRight(event.getBearing());
 		System.out.println("hitwall!");
 	}
@@ -171,18 +218,18 @@ public class Remake extends AdvancedRobot {
 	 * 被子弹击中，可以获得如子弹射过来的方向
 	 */
 	public void onHitByBullet(HitByBulletEvent event) {
-		hitHiding = 15 + (int) (10 * Math.random());
-		System.out.println(hitHiding);
+		if (cooperate.getEnemyRest() != 1)
+			return;
 		double bearing = event.getBearing();
 		double turnTagency;
 		if (bearing >= 0)
 			turnTagency = bearing - 90;
 		else
 			turnTagency = bearing + 90;
+		hiding = 5;
 
 		setTurnRight(turnTagency);
-		setAhead(-200);
-		// event.get___
+		setAhead(200 * direction);
 	}
 
 	// ------------------------------------------------------------------------------------
