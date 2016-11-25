@@ -244,7 +244,11 @@ public class Remake extends AdvancedRobot {
 				aimingTime++;
 				setTurnGunRight(nextAimInfo.getBearing());
 				if (nextAimInfo.getIfCanFire()) {
-					setFire(nextAimInfo.getPower());
+					if (cooperate.getEnemyRest() > 0)
+						setFire(nextAimInfo.getPower());
+					else {
+						setFire(battleMap.aimingTarget.getEnergy() / 100);// Ë¢·Ö
+					}
 				}
 			} else {
 				aimingTime = 0;
