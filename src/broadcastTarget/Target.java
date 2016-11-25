@@ -11,8 +11,11 @@ public class Target extends AdvancedRobot {
 		System.out.println(getX());
 		System.out.println(getY());
 		while (true) {
-			while (true)
+			while (true) {
+				setAhead(-200);
+				setTurnRight(200);
 				execute();
+			}
 		}
 	}
 }

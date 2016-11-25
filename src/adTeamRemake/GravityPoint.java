@@ -1,4 +1,4 @@
-package adPredict3;
+package adTeamRemake;
 
 /**
  * 重力点的数据结构

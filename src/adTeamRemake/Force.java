@@ -1,4 +1,4 @@
-package adPredict3;
+package adTeamRemake;
 
 /**
  * 力的数据结构
@@ -6,4 +6,5 @@ package adPredict3;
 public class Force {
 	double xForce = 0;
 	double yForce = 0;
+
 }

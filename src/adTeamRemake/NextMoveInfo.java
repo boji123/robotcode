@@ -1,4 +1,4 @@
-package adPredict3;
+package adTeamRemake;
 
 /**
  * 下一步移动的量的数据结构，包括方向与距离

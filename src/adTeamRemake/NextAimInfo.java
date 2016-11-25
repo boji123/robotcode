@@ -1,4 +1,4 @@
-package adPredict3;
+package adTeamRemake;
 
 /**
  * 下一步瞄准信息的数据结构
