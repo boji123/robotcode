@@ -203,7 +203,7 @@ public class BattleMap {
 		}
 
 		// 计算墙的作用力
-		GravityPoint[] pointList = new GravityPoint[8];
+		GravityPoint[] pointList = new GravityPoint[9];
 		pointList[0] = new GravityPoint(0, battle.getY(), -5000);
 		pointList[1] = new GravityPoint(battle.getBattleFieldWidth(), battle.getY(), -5000);
 		pointList[2] = new GravityPoint(battle.getX(), 0, -5000);
@@ -212,9 +212,10 @@ public class BattleMap {
 		pointList[5] = new GravityPoint(0, battle.getBattleFieldHeight(), -20000);
 		pointList[6] = new GravityPoint(battle.getBattleFieldWidth(), 0, -20000);
 		pointList[7] = new GravityPoint(battle.getBattleFieldWidth(), battle.getBattleFieldHeight(), -20000);
+		pointList[8] = new GravityPoint(battle.getBattleFieldWidth() / 2, battle.getBattleFieldHeight() / 2, -10000);
 		// pointList[4] = new GravityPoint(battle.getBattleFieldWidth() / 2,
 		// battle.getBattleFieldHeight() / 2, -10000);
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 9; i++) {
 			force = pointList[i].calcuPointForce(battle.getX(), battle.getY());
 			xforce += force.xForce;
 			yforce += force.yForce;

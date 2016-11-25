@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
+
 import robocode.*;
 
 public class Remake extends AdvancedRobot {
@@ -50,8 +52,7 @@ public class Remake extends AdvancedRobot {
 				if (hiding > 0)
 					hiding--;
 			}
-			if (cooperate.teammateRest > 0)
-				avoidWall();
+			avoidWall();
 			setFire();
 			// 在实际tick解析中，开火事件瞬发，炮管移动与车体移动叠加
 			// System.out.println(getOthers());
@@ -146,67 +147,92 @@ public class Remake extends AdvancedRobot {
 		 * (Math.abs(getHeading()) < 90) setTurnRight(0 - getHeading()); else
 		 * setTurnRight(BattleMap.normalizeAngle(180 - getHeading())); }
 		 */
-
+		// setTurnRight(0);
+		// setAhead(-1000);//
+		// 由于车有加速度，这个函数会根据距离调整车的速度，确保你停在正确位置，因此输入的移动距离大，车速大，距离小，车速小
 	}
 
 	public void avoidWall() {// 根据当前坦克状态选择避墙
-		double avoidDist = 80;
+		double avoidDist = 100;
 		double moveDirect = BattleMap.normalizeAngle(getHeading() - 90 + 90 * Math.signum(getDistanceRemaining()));
 		// System.out.println(moveDirect);
 		// turn on top
 		double remain = avoidDist;
 		boolean ifAvoid = false;
-		if (getY() > getBattleFieldHeight() - avoidDist) {
-			if (moveDirect >= 0 && moveDirect < 90) {
+		if (getY() > getBattleFieldHeight() - avoidDist) {// 在上边界
+			if (moveDirect >= 0 && moveDirect < 90) {// 右转较好
 				setTurnRight(90 - moveDirect);
 			}
 			if (moveDirect < 0 && moveDirect > -90) {
 				setTurnRight(-90 - moveDirect);
 			}
+			if (getX() < avoidDist) {// 在左边界
+				if (moveDirect > -45 && moveDirect < 90)
+					setTurnRight(90 - moveDirect);// 右转
+				else if (moveDirect < -45 && moveDirect > -180) {
+					setTurnRight(-180 - moveDirect);// 左转
+				}
+			}
+			if (getX() > getBattleFieldWidth() - avoidDist) {// 在右边界
+				if (moveDirect > 45 && moveDirect < 180)
+					setTurnRight(180 - moveDirect);// 右转
+				else if (moveDirect < 45 && moveDirect > -90) {
+					setTurnRight(-90 - moveDirect);// 左转
+				}
+			}
 			remain = Math.min(getBattleFieldHeight() - getY(), remain);
 			ifAvoid = true;
-		}
-		// System.out.println(getTurnRemaining());
-		// turn on bottom
-		if (getY() < avoidDist) {
-			if (moveDirect > 90 && moveDirect <= 180) {
-				setTurnRight(90 - moveDirect);
+		} else if (getY() < avoidDist) {// 在下边界
+			if (moveDirect > 90 && moveDirect < 180) {
+				setTurnRight(90 - moveDirect);// 适合左转
 			}
 			if (moveDirect < -90 && moveDirect >= -180) {
 				setTurnRight(-90 - moveDirect);
 			}
+			if (getX() < avoidDist) {// 在左边界
+				if (moveDirect > -135 && moveDirect < 0)
+					setTurnRight(0 - moveDirect);// 右转
+				else if (moveDirect < -135 || moveDirect > 90) {
+					if (moveDirect < 0)
+						moveDirect += 360;
+					setTurnRight(90 - moveDirect);// 左转
+				}
+			}
+			if (getX() > getBattleFieldWidth() - avoidDist) {// 在右边界
+				if (moveDirect > 135 || moveDirect < -90) {
+					if (moveDirect < 0)
+						moveDirect += 360;
+					setTurnRight(270 - moveDirect);// 右转
+				} else if (moveDirect < 135 && moveDirect > 0)
+					setTurnRight(0 - moveDirect);// 左转
+			}
 			remain = Math.min(getY(), remain);
 			ifAvoid = true;
-		}
-
-		// turn on left
-		if (getX() < avoidDist) {
-			if (moveDirect >= -90 && moveDirect < 0) {
-				setTurnRight(0 - moveDirect);
+		} else if (getX() < avoidDist) {// 在左边界且不在上下边界
+			if (moveDirect >= -90 && moveDirect < 0) {// 建议右转
+				setTurnRight(0 - moveDirect);// 右转
 			}
-			if (moveDirect < -90 && moveDirect > -180) {
-				setTurnRight(-180 - moveDirect);
+			if (moveDirect < -90 && moveDirect > -180) {// 建议左转
+				setTurnRight(-180 - moveDirect);// 左转
 			}
 			remain = Math.min(getX(), remain);
 			ifAvoid = true;
-		}
-
-		// turn on right
-		if (getX() > getBattleFieldWidth() - avoidDist) {
-			if (moveDirect > 0 && moveDirect <= 90) {
-				setTurnRight(0 - moveDirect);
-			}
-			if (moveDirect < 180 && moveDirect > 90) {
+		} else if (getX() > getBattleFieldWidth() - avoidDist) {// 在右边界且不在上下边界
+			if (moveDirect < 180 && moveDirect > 90) {// 建议右转
 				setTurnRight(180 - moveDirect);
+			}
+			if (moveDirect > 0 && moveDirect <= 90) {// 建议左转
+				setTurnRight(0 - moveDirect);// 左转
 			}
 			remain = Math.min(getBattleFieldWidth() - getX(), remain);
 			ifAvoid = true;
 		}
-		if (remain < avoidDist * 2 / 3 && Math.abs(getTurnRemaining()) > 60 && ifAvoid) {
+		if (ifAvoid && remain < avoidDist && Math.abs(getTurnRemaining()) > 45) {
 			setMaxVelocity(6);
-		} else if (remain < avoidDist / 3 && Math.abs(getTurnRemaining()) > 30 && ifAvoid) {
+		} else if (ifAvoid && remain < avoidDist / 2 && Math.abs(getTurnRemaining()) > 30) {
 			setMaxVelocity(4);
-		}
+		} else
+			setMaxVelocity(8);
 		if (ifAvoid)
 			ifNearWall = true;
 		else
