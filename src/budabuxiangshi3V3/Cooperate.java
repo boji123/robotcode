@@ -1,4 +1,4 @@
-package adTeamRemake;
+package budabuxiangshi3V3;
 
 //由于混战没有队伍，为了防止友军伤害强行自己实现了个类似队伍的类
 public class Cooperate {
