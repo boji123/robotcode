@@ -1,11 +1,13 @@
 package budabuxiangshi3V3;
 
 //由于混战没有队伍，为了防止友军伤害强行自己实现了个类似队伍的类
+//重要！改包名会导致找不到自己的队友！
 public class Cooperate {
-	Remake battle;
+	budabuxiangshi battle;
 	BattleMap battleMap;
 
-	String[] teammates = { "adTeamRemake.Remake* (1)", "adTeamRemake.Remake* (2)", "adTeamRemake.Remake* (3)" };// 包括自己
+	String[] teammates = { "budabuxiangshi3V3.budabuxiangshi* (1)", "budabuxiangshi3V3.budabuxiangshi* (2)",
+			"budabuxiangshi3V3.budabuxiangshi* (3)" };// 包括自己
 	int teammateRest = 2;
 
 	Force teamForce = new Force();// 0左下1左上2右上3右下
@@ -13,7 +15,7 @@ public class Cooperate {
 	int reachCount = 50;
 	Force cornerForce = new Force();
 
-	public void init(Remake battle, BattleMap battleMap) {
+	public void init(budabuxiangshi battle, BattleMap battleMap) {
 		this.battle = battle;
 		this.battleMap = battleMap;
 	}

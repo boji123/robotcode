@@ -26,7 +26,7 @@ public class Remake extends AdvancedRobot {
 
 	public void run() {
 		cooperate.init(this, battleMap);
-		setColors(Color.gray, Color.black, Color.black);
+		setColors(Color.gray, Color.black, Color.black, Color.orange, Color.yellow);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
@@ -61,6 +61,7 @@ public class Remake extends AdvancedRobot {
 			while (getTime() == preTick)
 				;// 程序锁死直到下一tick到来
 			preTick = getTime();
+
 			setScan();
 			setFire();
 			execute();

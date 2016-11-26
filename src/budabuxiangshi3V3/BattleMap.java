@@ -10,10 +10,10 @@ import robocode.Rules;
  * 地图类，用于保存所有敌人以及你自己的位置信息
  */
 public class BattleMap {
-	Remake battle;// battle包含你自己的实时信息以及战场信息
+	budabuxiangshi battle;// battle包含你自己的实时信息以及战场信息
 	RobotInfo aimingTarget = new RobotInfo();
 
-	BattleMap(Remake battle) {
+	BattleMap(budabuxiangshi battle) {
 		this.battle = battle;
 	}
 

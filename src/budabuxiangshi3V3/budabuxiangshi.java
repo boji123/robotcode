@@ -7,7 +7,7 @@ import java.util.Hashtable;
 import robocode.*;
 
 //3V3混战适用
-public class Remake extends AdvancedRobot {
+public class budabuxiangshi extends AdvancedRobot {
 	int teamFireCount = 0;// 用于每局战斗统计队友伤害
 	// -----
 	BattleMap battleMap = new BattleMap(this);
@@ -26,7 +26,7 @@ public class Remake extends AdvancedRobot {
 
 	public void run() {
 		cooperate.init(this, battleMap);
-		setColors(Color.gray, Color.black, Color.black);
+		setColors(Color.gray, Color.black, Color.black, Color.orange, Color.yellow);
 		// 解除锁定，三个部分独立运行
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForGunTurn(true);
@@ -55,17 +55,28 @@ public class Remake extends AdvancedRobot {
 			setFire();
 			execute();
 		}
+
 		// 敌人死光，自相残杀，刷击中分
 		cooperate.teammates = null;
 		while (true) {
 			while (getTime() == preTick)
 				;// 程序锁死直到下一tick到来
 			preTick = getTime();
+			if (getTime() % 10 == 0) {
+				setBodyColor(randomColor());
+				setBulletColor(randomColor());
+			}
 			setScan();
 			setFire();
 			execute();
 		}
 
+	}
+
+	public Color randomColor() {// 没啥用的函数，改颜色
+		Color[] color = { Color.gray, Color.black, Color.white, Color.blue, Color.red, Color.yellow, Color.green,
+				Color.pink, Color.orange, Color.magenta, Color.cyan };// 准备用来随机
+		return color[(int) (Math.random() * 10000) % color.length];
 	}
 
 	public void setScan() {
@@ -327,6 +338,9 @@ public class Remake extends AdvancedRobot {
 	 * 如果能胜利的话。。执行这一段装逼用
 	 */
 	public void onWin(WinEvent e) {
+		setBodyColor(randomColor());
+		setGunColor(randomColor());
+		setRadarColor(randomColor());
 		for (int i = 0; i < 50; i++) {
 			turnGunRightRadians(Math.PI * 3 / 4);
 			turnGunLeftRadians(Math.PI * 3 / 4);
